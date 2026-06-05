@@ -1256,24 +1256,51 @@ async function sendToAI(msg) {
   const ctxRecs  = recs.length  ? `\nGravações: ${recs.map(r => `${r.name} (${REC_STATUS[r.status]?.label || r.status})`).join(', ')}` : '';
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `Você é o Studio AI, assistente especializado em criação de conteúdo para YouTube. Responda em português brasileiro de forma prática, direta e calorosa. Máximo 3 parágrafos. Use **negrito** para pontos-chave e *itálico* para exemplos ou termos técnicos.${ctxTasks}${ctxRecs}`,
-        messages: aiHistory.slice(-14)
-      })
-    });
+    // ── SUA CHAVE DO GEMINI ──────────────────────────────────────────
+    const GEMINI_KEY = 'AQ.Ab8RN6Juerz7Z9L8W7YyaX3xuDhJ3sHaiJqv5y6aQul-rpNK4Q';
+    // ─────────────────────────────────────────────────────────────────
+
+    const systemPrompt = `Você é o Studio AI, assistente especializado em criação de conteúdo para YouTube. Responda em português brasileiro de forma prática, direta e calorosa. Máximo 3 parágrafos. Use **negrito** para pontos-chave e *itálico* para exemplos ou termos técnicos.${ctxTasks}${ctxRecs}`;
+
+    // Monta histórico no formato Gemini (garante alternância user/model)
+    const rawHistory = aiHistory.slice(-14);
+    const contents = [];
+    for (let i = 0; i < rawHistory.length; i++) {
+      const role = rawHistory[i].role === 'assistant' ? 'model' : 'user';
+      // Evita duas mensagens seguidas do mesmo papel
+      if (contents.length > 0 && contents[contents.length - 1].role === role) {
+        contents[contents.length - 1].parts[0].text += '
+' + rawHistory[i].content;
+      } else {
+        contents.push({ role, parts: [{ text: rawHistory[i].content }] });
+      }
+    }
+    // Garante que sempre começa com user
+    if (contents.length === 0 || contents[0].role !== 'user') {
+      contents.unshift({ role: 'user', parts: [{ text: msg }] });
+    }
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents,
+          generationConfig: { maxOutputTokens: 1000, temperature: 0.8 }
+        })
+      }
+    );
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Não consegui processar. Tente novamente.';
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Não consegui processar. Tente novamente.';
     aiHistory.push({ role: 'assistant', content: reply });
     loadRow.remove();
     appendMessage(reply, 'ai');
-  } catch {
+  } catch(err) {
     loadRow.remove();
-    appendMessage('Não foi possível conectar. Verifique sua conexão e tente novamente.', 'ai');
+    appendMessage('Erro: ' + (err.message || 'Verifique sua chave do Gemini e tente novamente.'), 'ai');
   }
 }
 
