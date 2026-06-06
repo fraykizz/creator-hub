@@ -312,6 +312,37 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .yt-ins strong{color:var(--acc2);font-weight:500}
 canvas{border-radius:8px;background:var(--bg2);display:block}
 
+/* ── RESPONSIVE MOBILE ── */
+@media(max-width:768px){
+  body{flex-direction:column}
+  .sb{width:100%;height:52px;flex-direction:row;padding:0 12px;border-right:none;border-bottom:1px solid var(--bg3);overflow-x:auto}
+  .sb.open{width:100%;height:52px;flex-direction:row}
+  .sb-logo{margin-bottom:0;margin-right:8px}
+  .sb-lbl{display:none!important}
+  .sb-sep{width:1px;height:24px;margin:0 4px}
+  .ni{width:36px;height:36px;flex-shrink:0}
+  .ni span{display:none!important}
+  .ni.act::before{display:none}
+  .sb-btm{margin-top:0;flex-direction:row;padding:0}
+  .av-sb .avname{display:none!important}
+  .sb.open .av-sb{width:36px;height:36px;border-radius:50%;padding:0;justify-content:center}
+  .tb-tog{display:none}
+  .g2{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr 1fr}
+  .cal-sb{display:none}
+  .chat-chips{display:none}
+  .topbar{padding:0 12px}
+  .scr{padding:12px}
+  .card{padding:12px}
+  .frow{flex-wrap:wrap}
+  .frow .fin{min-width:0;width:100%}
+  .mg2{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .g3{grid-template-columns:1fr}
+  .mbox{width:calc(100vw - 20px);padding:14px}
+}
+
 /* ── MODAL ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(3px)}
 .ov.open{display:flex;animation:fadeIn .2s ease}
@@ -412,14 +443,29 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 
   window.loadUserData = async (uid) => {
     try {
-      const t = await window.fbLoadData(uid, 'tasks');
-      const r = await window.fbLoadData(uid, 'recs');
-      const e = await window.fbLoadData(uid, 'events');
-      if (t) { window._tasks = t; localStorage.setItem('ch_tasks', JSON.stringify(t)); }
-      if (r) { window._recs = r; localStorage.setItem('ch_recs', JSON.stringify(r)); }
-      if (e) { window._events = e; localStorage.setItem('ch_evs', JSON.stringify(e)); }
+      const [t, r, e, s, h, p] = await Promise.all([
+        window.fbLoadData(uid, 'tasks'),
+        window.fbLoadData(uid, 'recs'),
+        window.fbLoadData(uid, 'events'),
+        window.fbLoadData(uid, 'shorts'),
+        window.fbLoadData(uid, 'history'),
+        window.fbLoadData(uid, 'profile'),
+      ]);
+      if (t) localStorage.setItem('ch_tasks', JSON.stringify(t));
+      if (r) localStorage.setItem('ch_recs', JSON.stringify(r));
+      if (e) localStorage.setItem('ch_evs', JSON.stringify(e));
+      if (s) localStorage.setItem('ch_shorts', JSON.stringify(s));
+      if (h) localStorage.setItem('ch_history', JSON.stringify(h));
+      if (p) localStorage.setItem('ch_prof', JSON.stringify(p));
+      // Reload all data in memory
+      if (typeof tasks !== 'undefined' && t) { tasks.length=0; t.forEach(x=>tasks.push(x)); }
+      if (typeof recs !== 'undefined' && r) { recs.length=0; r.forEach(x=>recs.push(x)); }
+      if (typeof events !== 'undefined' && e) { events.length=0; e.forEach(x=>events.push(x)); }
+      if (typeof shorts !== 'undefined' && s) { shorts.length=0; s.forEach(x=>shorts.push(x)); }
+      if (typeof growthHistory !== 'undefined' && h) { growthHistory.length=0; h.forEach(x=>growthHistory.push(x)); }
       if (typeof renderDTasks === 'function') renderDTasks();
       if (typeof renderDRecs === 'function') renderDRecs();
+      if (typeof loadProfile === 'function') loadProfile();
     } catch(err) { console.error('Erro ao carregar dados:', err); }
   };
 </script>
@@ -735,6 +781,29 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- EVENT DETAIL MODAL -->
+<div class="ov" id="ev-detail-ov">
+  <div class="mbox" onclick="event.stopPropagation()" style="width:340px">
+    <div class="mbox-t" id="evd-title">Detalhes do evento</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="mf"><label>Data</label><input class="fin" id="evd-date" type="date" style="width:100%"></div>
+      <div class="mf"><label>Hora</label><input class="fin" id="evd-time" type="time" style="width:100%"></div>
+    </div>
+    <div class="mf"><label>Local / Plataforma</label><input class="fin" id="evd-place" placeholder="Ex: Estúdio, YouTube Live..." style="width:100%"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="mf"><label>Duração estimada</label><input class="fin" id="evd-duration" placeholder="Ex: 2 horas" style="width:100%"></div>
+      <div class="mf"><label>Investimento (R$)</label><input class="fin" id="evd-invest" type="number" placeholder="0,00" style="width:100%"></div>
+    </div>
+    <div class="mf"><label>Material / Equipamento</label><input class="fin" id="evd-material" placeholder="Ex: Câmera, iluminação..." style="width:100%"></div>
+    <div class="mf"><label>Notas adicionais</label><textarea class="fin" id="evd-notes" placeholder="Detalhes extras..." rows="3" style="width:100%;resize:none"></textarea></div>
+    <div class="mfoot">
+      <button class="btn-g" onclick="document.getElementById('ev-detail-ov').classList.remove('open')">Fechar</button>
+      <button class="btn-g" style="border-color:var(--red);color:var(--red)" onclick="deleteEventFromDetail()"><i class="ti ti-trash" style="font-size:12px"></i>Excluir</button>
+      <button class="btn-a" onclick="saveEventDetail()"><i class="ti ti-check"></i>Salvar</button>
+    </div>
+  </div>
+</div>
 
   <!-- MONETIZAÇÃO -->
   <section class="pg" id="pg-monetization">
@@ -1174,7 +1243,7 @@ function renderMonthV(){
     const evs=evForDate(k),iT=k===tdKey(),iS=k===selD;
     return '<div class="dc'+(om?' om':'')+(iT?' tc':'')+(iS?' sc':'')+'" onclick="selD=\''+k+'\';renderCal()">'
       +'<div class="dn'+(iT?' tn':'')+'">'+n+'</div>'
-      +evs.slice(0,3).map(e=>'<div class="ec '+(EV_CLS[e.type]||'ec-t')+'">'+(e.time?e.time.substring(0,5)+' ':'')+e.title+'</div>').join('')
+      +evs.slice(0,3).map(e=>'<div class="ec '+(EV_CLS[e.type]||'ec-t')+'" onclick="event.stopPropagation();openEventDetail(\''+e.id+'\')" title="'+e.title+' — clique para detalhes">'+(e.time?e.time.substring(0,5)+' ':'')+e.title+'</div>').join('')
       +(evs.length>3?'<div style="font-size:7px;color:var(--txt2);padding:1px 3px">+'+( evs.length-3)+'</div>':'')
       +'</div>';
   };
@@ -1225,6 +1294,43 @@ document.getElementById('nev-btn').onclick=()=>{
 document.getElementById('ev-ov').onclick=e=>{if(e.target===document.getElementById('ev-ov'))closeEv()};
 document.querySelectorAll('.tp').forEach(p=>p.onclick=()=>{selEvT=p.dataset.t;document.querySelectorAll('.tp').forEach(x=>x.classList.toggle('on',x===p))});
 function closeEv(){document.getElementById('ev-ov').classList.remove('open')}
+
+let currentDetailEventId = null;
+function openEventDetail(evId) {
+  const ev = events.find(e => e.id === evId);
+  if (!ev) return;
+  currentDetailEventId = evId;
+  document.getElementById('evd-title').textContent = ev.title;
+  document.getElementById('evd-date').value = ev.date || '';
+  document.getElementById('evd-time').value = ev.time || '';
+  document.getElementById('evd-place').value = ev.place || '';
+  document.getElementById('evd-duration').value = ev.duration || '';
+  document.getElementById('evd-invest').value = ev.invest || '';
+  document.getElementById('evd-material').value = ev.material || '';
+  document.getElementById('evd-notes').value = ev.notes || ev.note || '';
+  document.getElementById('ev-detail-ov').classList.add('open');
+}
+function saveEventDetail() {
+  const ev = events.find(e => e.id === currentDetailEventId);
+  if (!ev) return;
+  ev.date = document.getElementById('evd-date').value;
+  ev.time = document.getElementById('evd-time').value;
+  ev.place = document.getElementById('evd-place').value;
+  ev.duration = document.getElementById('evd-duration').value;
+  ev.invest = document.getElementById('evd-invest').value;
+  ev.material = document.getElementById('evd-material').value;
+  ev.notes = document.getElementById('evd-notes').value;
+  saveEvs(); renderCal();
+  document.getElementById('ev-detail-ov').classList.remove('open');
+  toast('Evento atualizado');
+}
+function deleteEventFromDetail() {
+  if (!confirm('Excluir este evento?')) return;
+  events = events.filter(e => e.id !== currentDetailEventId);
+  saveEvs(); renderCal();
+  document.getElementById('ev-detail-ov').classList.remove('open');
+  toast('Evento excluído');
+}
 function saveEv(){
   const t=document.getElementById('ev-t').value.trim();if(!t)return;
   events.push({id:Date.now()+'',title:t,type:selEvT,date:document.getElementById('ev-d').value||selD,time:document.getElementById('ev-h').value,note:document.getElementById('ev-n').value.trim()});
@@ -1333,7 +1439,9 @@ function upPreview(){
   document.getElementById('sb-name').textContent=document.getElementById('s-name').value||'Minha conta';
 }
 function saveProfile(){
-  localStorage.setItem('ch_prof',JSON.stringify({name:document.getElementById('s-name').value,email:document.getElementById('s-email').value,chan:document.getElementById('s-chan').value,bio:document.getElementById('s-bio').value}));
+  const p={name:document.getElementById('s-name').value,email:document.getElementById('s-email').value,chan:document.getElementById('s-chan').value,bio:document.getElementById('s-bio').value};
+  localStorage.setItem('ch_prof',JSON.stringify(p));
+  if(window._fbUser) window.fbSaveData(window._fbUser.uid,'profile',p).catch(()=>{});
   toast('Perfil salvo!');
 }
 function clearData(){
@@ -1399,10 +1507,22 @@ function renderDashYT() {
 function renderMonetization() {
   const el = document.getElementById('monetization-scr');
   if (!el) return;
-  if (!window.ytChannel) {
-    el.innerHTML = '<div class="empty"><i class="ti ti-coin"></i>Conecte seu canal na aba YouTube Studio para ver dados de monetização.</div>';
+  // Try to use cached channel data even if not on YT tab
+  const cached = localStorage.getItem('yt_channel');
+  if (cached && !window._ytChannel) window._ytChannel = JSON.parse(cached);
+  if (!window._ytChannel && !window.ytChannel) {
+    // Check if token exists - if yes, load data automatically
+    const token = localStorage.getItem('yt_token');
+    if (token) {
+      window.ytToken = token;
+      el.innerHTML = '<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando dados do canal...</div>';
+      loadYTData().then(() => renderMonetization());
+      return;
+    }
+    el.innerHTML = '<div class="empty"><i class="ti ti-coin"></i>Conecte seu canal na aba <strong>YouTube Studio</strong> para ver dados de monetização.</div>';
     return;
   }
+  if (!window.ytChannel && window._ytChannel) window.ytChannel = window._ytChannel;
   const c = window.ytChannel;
   const subs = c.subs || 0;
   const subsOk = subs >= 1000;
@@ -1485,7 +1605,10 @@ function addShort() {
 
 // ── HISTÓRICO ──
 let growthHistory = JSON.parse(localStorage.getItem('ch_history') || '[]');
-function saveHistory() { localStorage.setItem('ch_history', JSON.stringify(growthHistory)); }
+function saveHistory() {
+  localStorage.setItem('ch_history', JSON.stringify(growthHistory));
+  if(window._fbUser) window.fbSaveData(window._fbUser.uid,'history',growthHistory).catch(()=>{});
+}
 function addHistoryEntry() {
   const subs = parseInt(document.getElementById('h-subs').value);
   const views = parseInt(document.getElementById('h-views').value);
@@ -1602,124 +1725,265 @@ function genTitles() {
   const desc = inp.value.trim();
   if (!desc) { toast('Descreva seu vídeo primeiro'); return; }
   const out = document.getElementById('titles-out');
-  out.innerHTML = '<div style="font-size:11px;color:var(--txt2);padding:8px 0">Gerando títulos...</div>';
+  out.innerHTML = '<div class="tdots" style="padding:10px 0"><span></span><span></span><span></span></div>';
+
   setTimeout(() => {
-    const templates = [
-      'Como ' + desc + ' (Guia Completo)',
-      'Eu tentei ' + desc + ' por 30 dias — resultado surpreendente',
-      desc + ': O que ninguém te conta',
-      'O erro que todo mundo comete ao ' + desc,
-      desc + ' do ZERO ao AVANÇADO em ' + (Math.floor(Math.random()*8)+3) + ' minutos',
-    ];
-    out.innerHTML = templates.map((t, i) => {
+    // Extract key nouns/verbs from description for smarter title generation
+    const words = desc.toLowerCase();
+    const isHowTo = words.includes('como') || words.includes('how') || words.includes('tutorial') || words.includes('fazer');
+    const isReview = words.includes('review') || words.includes('teste') || words.includes('testei') || words.includes('vale');
+    const isComparison = words.includes('vs') || words.includes('versus') || words.includes('melhor') || words.includes('qual');
+    const hasMistake = words.includes('erro') || words.includes('mistake') || words.includes('evitar');
+
+    // Generate contextually smart titles
+    const d = desc.charAt(0).toUpperCase() + desc.slice(1);
+    const dLower = desc.toLowerCase();
+
+    let titles = [];
+
+    if (isHowTo) {
+      titles = [
+        d + ' passo a passo (do jeito certo)',
+        'O guia COMPLETO de ' + dLower + ' que ninguém fez ainda',
+        dLower + ': Aprenda em ' + (Math.floor(Math.random()*15)+5) + ' minutos',
+        'Fiz ' + dLower + ' por 30 dias — o que ninguém te conta',
+        'Por que todo mundo erra em ' + dLower + ' (e como acertar)',
+      ];
+    } else if (isReview) {
+      titles = [
+        d + ': VALE A PENA? Testei por 2 semanas',
+        'Honestamente: ' + d + ' (minha experiência real)',
+        d + ' — o que as reviews não mostram',
+        'Comprei ' + d + ' — foi um erro?',
+        d + ': Depois de ' + (Math.floor(Math.random()*6)+2) + ' meses de uso',
+      ];
+    } else if (isComparison) {
+      titles = [
+        d + ': qual escolher em ' + new Date().getFullYear() + '?',
+        'Comparei ' + dLower + ' e o resultado me surpreendeu',
+        d + ' — análise honesta e sem enrolação',
+        'Testei os dois: ' + d + ' (resultado FINAL)',
+        d + ': diferenças que ninguém explica',
+      ];
+    } else {
+      titles = [
+        d + ' — o que ninguém está falando',
+        'Tudo que você precisa saber sobre ' + dLower,
+        d + ': minha experiência honesta',
+        'Por que ' + dLower + ' mudou minha rotina completamente',
+        d + ' em ' + (Math.floor(Math.random()*8)+3) + ' minutos (sem enrolação)',
+      ];
+    }
+
+    // Add power words to some titles
+    const powerWords = ['INCRÍVEL', 'DEFINITIVO', 'VERDADE', 'SEGREDO', 'CERTO'];
+    titles[0] = titles[0]; // keep first clean
+    
+    out.innerHTML = '<div style="font-size:9px;color:var(--txt2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;padding:0 2px">Clique para copiar</div>'
+    + titles.map((t, i) => {
       const safe = t.replace(/"/g, '&quot;');
-      return '<div class="trow" style="cursor:pointer" onclick="copyTitle(this)"  data-title="' + safe + '">'
-      + '<span style="font-size:10px;color:var(--acc2);font-weight:600;flex-shrink:0">' + (i+1) + '</span>'
-      + '<span class="tlbl">' + t + '</span>'
-      + '<i class="ti ti-copy" style="font-size:13px;color:var(--txt2)"></i>'
-      + '</div>';
+      const chars = t.length;
+      const charColor = chars <= 60 ? 'var(--green)' : chars <= 70 ? 'var(--amber)' : 'var(--red)';
+      return '<div class="trow" style="cursor:pointer;padding:9px 6px" onclick="copyTitle(this)" data-title="' + safe + '">'
+        + '<span style="font-size:10px;color:var(--acc2);font-weight:600;flex-shrink:0;width:16px">' + (i+1) + '</span>'
+        + '<span class="tlbl" style="line-height:1.5">' + t + '</span>'
+        + '<span style="font-size:9px;color:' + charColor + ';flex-shrink:0">' + chars + '</span>'
+        + '<i class="ti ti-copy" style="font-size:12px;color:var(--txt2);flex-shrink:0"></i>'
+        + '</div>';
     }).join('');
-  }, 600);
+  }, 800);
 }
 
 // ── SQUAD ──
 let mySquad = JSON.parse(localStorage.getItem('ch_squad') || 'null');
-function renderSquad() {
+// Squad state
+let squadData = null;
+let squadTasks = [];
+
+async function loadSquadFromFirebase(squadId) {
+  if (!window._fbFns || !window._fbUser) return null;
+  try {
+    const snap = await window._fbFns.getDoc(window._fbFns.doc(window._fbDb, 'squads', squadId));
+    return snap.exists() ? snap.data() : null;
+  } catch(e) { return null; }
+}
+
+async function saveSquadToFirebase(squad) {
+  if (!window._fbFns || !window._fbUser) return;
+  try {
+    await window._fbFns.setDoc(window._fbFns.doc(window._fbDb, 'squads', squad.id), squad);
+  } catch(e) { console.error('Squad save error:', e); }
+}
+
+async function renderSquad() {
   const el = document.getElementById('squad-scr');
   if (!el) return;
   if (!window._fbUser) {
     el.innerHTML = '<div class="empty"><i class="ti ti-users-group"></i>Faça login para usar o Squad.</div>';
     return;
   }
-  if (!mySquad) {
+
+  // Check URL for squad invite
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteId = urlParams.get('squad');
+  if (inviteId && !mySquad) {
+    const inviteHtml = '<div class="card" style="text-align:center;padding:28px"><div style="font-family:var(--serif);font-size:19px;font-style:italic;color:var(--txt0);margin-bottom:10px">Convite de Squad</div><div style="font-size:12px;color:var(--txt2);margin-bottom:18px">Você foi convidado para entrar em uma squad.</div><button class="btn-a" onclick="acceptInvite(window._pendingInvite)"><i class="ti ti-door-enter"></i>Aceitar convite</button></div>';
+    window._pendingInvite = inviteId;
+    el.innerHTML = inviteHtml;
+    return;
+  }
+
+  // Load squad from Firebase if user has one
+  const savedSquadId = localStorage.getItem('ch_squad_id');
+  if (savedSquadId && !squadData) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando squad...</div>';
+    squadData = await loadSquadFromFirebase(savedSquadId);
+    if (squadData) {
+      squadTasks = squadData.tasks || [];
+    }
+  }
+
+  if (!savedSquadId || !squadData) {
     el.innerHTML = '<div class="card" style="text-align:center;padding:28px">'
       + '<i class="ti ti-users-group" style="font-size:36px;color:var(--acc);display:block;margin-bottom:12px"></i>'
       + '<div style="font-family:var(--serif);font-size:19px;font-style:italic;color:var(--txt0);margin-bottom:6px">Crie sua Squad</div>'
-      + '<div style="font-size:12px;color:var(--txt2);line-height:1.6;margin-bottom:20px;max-width:280px;margin-left:auto;margin-right:auto">Convide colaboradores, atribua tarefas e compartilhe um calendário com sua equipe.</div>'
+      + '<div style="font-size:12px;color:var(--txt2);line-height:1.6;margin-bottom:20px;max-width:280px;margin-left:auto;margin-right:auto">Crie uma squad, convide amigos e colaborem em projetos juntos.</div>'
       + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
       + '<button class="btn-a" onclick="createSquad()"><i class="ti ti-plus"></i>Criar Squad</button>'
-      + '<button class="btn-g" onclick="joinSquad()"><i class="ti ti-door-enter"></i>Entrar com código</button>'
+      + '<button class="btn-g" onclick="showJoinSquad()"><i class="ti ti-door-enter"></i>Entrar com código</button>'
       + '</div></div>';
     return;
   }
-  const members = mySquad.members || [];
-  el.innerHTML = '<div class="card" style="background:var(--bg2)">'
+
+  const members = squadData.members || [];
+  el.innerHTML = '<div class="card" style="background:var(--bg2);margin-bottom:12px">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
-    + '<div><div style="font-family:var(--serif);font-size:17px;font-style:italic;color:var(--txt0)">' + mySquad.name + '</div>'
+    + '<div><div style="font-family:var(--serif);font-size:17px;font-style:italic;color:var(--txt0)">' + squadData.name + '</div>'
     + '<div style="font-size:10px;color:var(--txt2);margin-top:2px">' + members.length + ' membro' + (members.length!==1?'s':'') + '</div></div>'
-    + '<button class="btn-g" onclick="copyInvite()" style="font-size:10px;padding:5px 10px"><i class="ti ti-link" style="font-size:12px"></i>Copiar convite</button>'
-    + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:8px">'
-    + members.map(m => '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bg3)">'
-      + '<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-user" style="font-size:13px;color:var(--txt2)"></i></div>'
-      + '<span style="font-size:12px;color:var(--txt1);flex:1">' + m.name + '</span>'
-      + '<span style="font-size:9px;color:var(--txt2)">' + m.email + '</span>'
+    + '<div style="display:flex;gap:6px">'
+    + '<button class="btn-g" onclick="copySquadInvite()" style="font-size:10px;padding:5px 10px"><i class="ti ti-link" style="font-size:12px"></i>Convidar</button>'
+    + '<button class="btn-g" onclick="leaveSquad()" style="font-size:10px;padding:5px 10px;border-color:var(--red);color:var(--red)">Sair</button>'
+    + '</div></div>'
+    + '<div style="display:flex;flex-direction:column;gap:4px">'
+    + members.map(m => '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bg3)">'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--acc) 18%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-user" style="font-size:13px;color:var(--acc2)"></i></div>'
+      + '<div style="flex:1"><div style="font-size:12px;color:var(--txt1)">' + m.name + '</div><div style="font-size:9px;color:var(--txt2)">' + m.email + '</div></div>'
+      + (m.uid === window._fbUser.uid ? '<span style="font-size:8px;padding:2px 7px;border-radius:20px;background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc2)">Você</span>' : '')
       + '</div>').join('')
     + '</div></div>'
     + '<div class="card">'
     + '<div class="card-h"><span class="card-lbl">Tarefas da Squad</span><span class="card-lnk" onclick="showSquadTaskModal()">+ Nova tarefa</span></div>'
-    + '<div id="squad-tasks">' + renderSquadTasks() + '</div></div>';
+    + '<div id="squad-tasks">' + renderSquadTasksList() + '</div></div>';
 }
 
-function renderSquadTasks() {
-  const st = JSON.parse(localStorage.getItem('ch_squad_tasks') || '[]');
-  if (!st.length) return '<div class="empty" style="padding:16px"><i class="ti ti-clipboard"></i>Nenhuma tarefa de squad ainda.</div>';
-  return st.map((t, i) => '<div class="trow">'
-    + '<div class="tck' + (t.done?' on':'') + '" onclick="toggleSquadTask(' + i + ')"></div>'
-    + '<span class="tlbl' + (t.done?' done':'') + '">' + t.name + '</span>'
-    + '<span style="font-size:9px;color:var(--txt2)">' + (t.assignees||[]).join(', ') + '</span>'
-    + (t.date?'<span class="tdate">' + t.date + '</span>':'')
-    + '</div>').join('');
+function renderSquadTasksList() {
+  if (!squadTasks.length) return '<div class="empty" style="padding:16px"><i class="ti ti-clipboard"></i>Nenhuma tarefa ainda. Clique em "+ Nova tarefa".</div>';
+  return squadTasks.map((t, i) => {
+    const assigneeNames = (t.assignees||[]).join(', ');
+    return '<div class="trow">'
+      + '<div class="tck' + (t.done?' on':'') + '" onclick="toggleSquadTask(' + i + ')"></div>'
+      + '<div style="flex:1"><div class="tlbl' + (t.done?' done':'') + '">' + t.name + '</div>'
+      + (assigneeNames ? '<div style="font-size:9px;color:var(--acc2);margin-top:2px">👥 ' + assigneeNames + '</div>' : '')
+      + '</div>'
+      + (t.date?'<span class="tdate">' + t.date + '</span>':'')
+      + '<button class="xb" style="opacity:1" onclick="deleteSquadTask(' + i + ')"><i class="ti ti-x"></i></button>'
+      + '</div>';
+  }).join('');
 }
 
-function toggleSquadTask(i) {
-  const st = JSON.parse(localStorage.getItem('ch_squad_tasks') || '[]');
-  st[i].done = !st[i].done;
-  localStorage.setItem('ch_squad_tasks', JSON.stringify(st));
-  document.getElementById('squad-tasks').innerHTML = renderSquadTasks();
+async function toggleSquadTask(i) {
+  squadTasks[i].done = !squadTasks[i].done;
+  document.getElementById('squad-tasks').innerHTML = renderSquadTasksList();
+  if (squadData) { squadData.tasks = squadTasks; await saveSquadToFirebase(squadData); }
 }
 
-function createSquad() {
+async function deleteSquadTask(i) {
+  squadTasks.splice(i, 1);
+  document.getElementById('squad-tasks').innerHTML = renderSquadTasksList();
+  if (squadData) { squadData.tasks = squadTasks; await saveSquadToFirebase(squadData); }
+}
+
+async function createSquad() {
   const name = prompt('Nome da sua Squad:');
   if (!name) return;
-  mySquad = {
-    id: Date.now() + '',
+  const id = 'sq_' + Date.now();
+  const user = window._fbUser;
+  squadData = {
+    id,
     name,
-    members: [{ name: window._fbUser.displayName || 'Você', email: window._fbUser.email, uid: window._fbUser.uid }],
-    createdAt: Date.now()
+    members: [{ name: user.displayName || user.email.split('@')[0], email: user.email, uid: user.uid }],
+    tasks: [],
+    createdAt: Date.now(),
+    createdBy: user.uid
   };
-  localStorage.setItem('ch_squad', JSON.stringify(mySquad));
+  squadTasks = [];
+  localStorage.setItem('ch_squad_id', id);
+  await saveSquadToFirebase(squadData);
   renderSquad();
   toast('Squad "' + name + '" criada!');
 }
 
-function joinSquad() {
-  const code = prompt('Cole o código de convite:');
+function showJoinSquad() {
+  const code = prompt('Cole o código da squad (ID):');
   if (!code) return;
-  toast('Funcionalidade completa disponível em breve!');
+  acceptInvite(code.trim());
 }
 
-function copyInvite() {
-  if (!mySquad) return;
-  const link = window.location.origin + window.location.pathname + '?squad=' + mySquad.id;
-  navigator.clipboard.writeText(link).then(() => toast('Link copiado!'));
+async function acceptInvite(squadId) {
+  const user = window._fbUser;
+  if (!user) { toast('Faça login primeiro'); return; }
+  const data = await loadSquadFromFirebase(squadId);
+  if (!data) { toast('Squad não encontrada. Verifique o código.'); return; }
+  // Add user to squad
+  const already = data.members.find(m => m.uid === user.uid);
+  if (!already) {
+    data.members.push({ name: user.displayName || user.email.split('@')[0], email: user.email, uid: user.uid });
+    await saveSquadToFirebase(data);
+  }
+  squadData = data;
+  squadTasks = data.tasks || [];
+  localStorage.setItem('ch_squad_id', squadId);
+  // Clean URL
+  history.replaceState(null, '', window.location.pathname);
+  renderSquad();
+  toast('Entrou na squad "' + data.name + '"!');
 }
 
-function showSquadTaskModal() {
+function copySquadInvite() {
+  if (!squadData) return;
+  const link = window.location.origin + window.location.pathname + '?squad=' + squadData.id;
+  navigator.clipboard.writeText(link).then(() => toast('Link de convite copiado! Mande para seu amigo.'));
+}
+
+function leaveSquad() {
+  if (!confirm('Sair da squad?')) return;
+  localStorage.removeItem('ch_squad_id');
+  squadData = null; squadTasks = [];
+  renderSquad();
+  toast('Saiu da squad');
+}
+
+async function showSquadTaskModal() {
   const name = prompt('Nome da tarefa:');
   if (!name) return;
-  const assignees = prompt('Quem participa? (separe por vírgula)');
-  const date = prompt('Data (AAAA-MM-DD) ou deixe vazio:');
-  const st = JSON.parse(localStorage.getItem('ch_squad_tasks') || '[]');
-  st.unshift({ name, assignees: assignees ? assignees.split(',').map(s=>s.trim()) : [], date: date||'', done: false });
-  localStorage.setItem('ch_squad_tasks', JSON.stringify(st));
-  // Add to calendar
+  const members = (squadData?.members||[]).map(m=>m.name);
+  const assigneesStr = prompt('Quem participa?\n' + members.map((m,i)=>(i+1)+'. '+m).join('\n') + '\n\n(Separe os nomes por vírgula)');
+  const date = prompt('Data da tarefa (AAAA-MM-DD) ou deixe vazio:');
+  const task = {
+    id: Date.now()+'',
+    name,
+    assignees: assigneesStr ? assigneesStr.split(',').map(s=>s.trim()).filter(Boolean) : [],
+    date: date||'',
+    done: false
+  };
+  squadTasks.unshift(task);
+  if (squadData) { squadData.tasks = squadTasks; await saveSquadToFirebase(squadData); }
   if (date) {
-    events.push({ id: 'squad_' + Date.now(), title: '👥 ' + name, type: 'task', date, time: '', note: assignees||'' });
+    events.push({ id:'squad_'+task.id, title:'👥 '+name, type:'task', date, time:'', note:(task.assignees.join(', ')||'Squad') });
     saveEvs();
   }
-  document.getElementById('squad-tasks').innerHTML = renderSquadTasks();
-  toast('Tarefa de squad criada');
+  document.getElementById('squad-tasks').innerHTML = renderSquadTasksList();
+  toast('Tarefa criada e adicionada ao calendário!');
 }
 
 // ── go() - MAIN NAVIGATION ──
