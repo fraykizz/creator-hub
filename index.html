@@ -832,9 +832,22 @@ async function ask(msg){
 
   const messages=[{role:'system',content:sys},...aiHist.slice(-14)];
 
+  // Timer visível no botão de loading
+  let secs=0;
+  const timer=setInterval(()=>{
+    secs++;
+    const dot=document.querySelector('#ld-row .bbl');
+    if(dot)dot.innerHTML=`<div class="tdots"><span></span><span></span><span></span></div><span style="font-size:9px;color:var(--txt2);margin-left:6px">${secs}s</span>`;
+  },1000);
+
+  // Timeout de 45 segundos
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),45000);
+
   try{
     const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
       method:'POST',
+      signal:controller.signal,
       headers:{
         'Content-Type':'application/json',
         'Authorization':'Bearer '+key,
@@ -844,10 +857,12 @@ async function ask(msg){
       body:JSON.stringify({
         model:'sourceful/riverflow-v2.5-fast:free',
         messages,
-        max_tokens:1000,
-        temperature:0.8
+        max_tokens:800,
+        temperature:0.7
       })
     });
+    clearTimeout(timeout);
+    clearInterval(timer);
     const data=await res.json();
     if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
     const reply=data.choices?.[0]?.message?.content||'Não consegui processar. Tente novamente.';
@@ -855,8 +870,14 @@ async function ask(msg){
     lr.remove();
     appendMsg(reply,'ai');
   }catch(err){
+    clearTimeout(timeout);
+    clearInterval(timer);
     lr.remove();
-    appendMsg('Erro: '+(err.message||'Verifique sua chave e tente novamente.'),'ai');
+    if(err.name==='AbortError'){
+      appendMsg('O servidor demorou demais para responder. Tente novamente — modelos gratuitos às vezes ficam em fila.','ai');
+    } else {
+      appendMsg('Erro: '+(err.message||'Verifique sua chave e tente novamente.'),'ai');
+    }
   }
 }
 
