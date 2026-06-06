@@ -310,6 +310,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .danger-btn:hover{border-color:var(--red);color:var(--red);transform:translateY(-1px)}
 .yt-ins{background:color-mix(in srgb,var(--acc) 7%,transparent);border:1px solid color-mix(in srgb,var(--acc) 20%,transparent);border-radius:8px;padding:12px;font-size:12px;color:var(--txt1);line-height:1.7}
 .yt-ins strong{color:var(--acc2);font-weight:500}
+canvas{border-radius:8px;background:var(--bg2);display:block}
 
 /* ── MODAL ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(3px)}
@@ -490,6 +491,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
   <div class="ni" data-p="ai"><i class="ti ti-message-bolt"></i><span>Assistente IA</span></div>
   <div class="ni" data-p="yt"><i class="ti ti-brand-youtube"></i><span>YouTube Studio</span></div>
   <div class="sb-sep"></div>
+  <div class="sb-lbl">Crescimento</div>
+  <div class="ni" data-p="monetization"><i class="ti ti-coin"></i><span>Monetização</span></div>
+  <div class="ni" data-p="shorts"><i class="ti ti-device-mobile"></i><span>Shorts</span></div>
+  <div class="ni" data-p="history"><i class="ti ti-chart-line"></i><span>Histórico</span></div>
+  <div class="ni" data-p="checklist"><i class="ti ti-list-check"></i><span>Checklist</span></div>
+  <div class="ni" data-p="squad"><i class="ti ti-users-group"></i><span>Squad</span></div>
+  <div class="sb-sep"></div>
   <div class="sb-btm">
     <div class="ni" data-p="settings"><i class="ti ti-adjustments-horizontal"></i><span>Configurações</span></div>
     <div class="av-sb" onclick="go('settings')">
@@ -534,12 +542,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
         </div>
       </div>
       <div class="card">
-        <div class="card-h"><span class="card-lbl">YouTube Studio · 28 dias</span><span class="card-lnk" onclick="go('yt')">análise completa →</span></div>
-        <div class="g3">
-          <div class="met"><div class="mval">4.820</div><div class="mlbl">Views</div><div class="mchg up">↑ 18%</div><div class="mbar"><div class="mfill" style="width:72%"></div></div></div>
-          <div class="met"><div class="mval">312</div><div class="mlbl">Inscritos</div><div class="mchg up">↑ 7%</div><div class="mbar"><div class="mfill" style="width:45%"></div></div></div>
-          <div class="met"><div class="mval">6:42</div><div class="mlbl">Tempo médio</div><div class="mchg dn">↓ 4%</div><div class="mbar"><div class="mfill" style="width:36%;background:var(--red)"></div></div></div>
-        </div>
+        <div class="card-h"><span class="card-lbl">YouTube Studio</span><span class="card-lnk" onclick="go('yt')">análise completa →</span></div>
+        <div id="dash-yt-stats"><div class="empty" style="padding:16px"><i class="ti ti-brand-youtube"></i>Conecte seu canal na aba YouTube Studio</div></div>
       </div>
     </div>
   </section>
@@ -731,6 +735,85 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 </div>
 
 <div class="toast" id="toast"></div>
+
+  <!-- MONETIZAÇÃO -->
+  <section class="pg" id="pg-monetization">
+    <div class="scr" id="monetization-scr">
+      <div class="empty"><i class="ti ti-coin"></i>Conecte seu canal na aba YouTube Studio para ver dados de monetização.</div>
+    </div>
+  </section>
+
+  <!-- SHORTS -->
+  <section class="pg" id="pg-shorts">
+    <div class="scr">
+      <div class="card">
+        <div class="card-h"><span class="card-lbl">Planejador de Shorts</span></div>
+        <div class="frow">
+          <input class="fin" id="sh-inp" placeholder="Ideia de Short..." style="flex:1">
+          <input class="fin" id="sh-dt" type="date" style="max-width:140px">
+          <select class="fin" id="sh-st" style="max-width:110px">
+            <option value="idea">Ideia</option>
+            <option value="script">Roteiro</option>
+            <option value="rec">Gravando</option>
+            <option value="edit">Editando</option>
+            <option value="pub">Publicado</option>
+          </select>
+          <button class="btn-a" onclick="addShort()"><i class="ti ti-plus"></i>Adicionar</button>
+        </div>
+        <div id="shorts-list"></div>
+      </div>
+      <div class="card" style="background:var(--bg2)">
+        <div class="card-h"><span class="card-lbl">Dica de Short</span></div>
+        <div style="font-size:12px;color:var(--txt1);line-height:1.7">Shorts com melhor desempenho têm entre <strong style="color:var(--acc2)">40-55 segundos</strong>, começam com movimento ou fala nos primeiros 2 segundos, e têm texto na tela. Evite adicionar links na descrição — o algoritmo penaliza.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section class="pg" id="pg-history">
+    <div class="scr">
+      <div class="card">
+        <div class="card-h"><span class="card-lbl">Registrar crescimento</span></div>
+        <div class="frow">
+          <input class="fin" id="h-subs" type="number" placeholder="Inscritos" style="max-width:130px">
+          <input class="fin" id="h-views" type="number" placeholder="Views totais" style="max-width:130px">
+          <input class="fin" id="h-dt" type="date" style="max-width:140px">
+          <button class="btn-a" onclick="addHistoryEntry()"><i class="ti ti-plus"></i>Registrar</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-lbl">Evolução</span></div>
+        <canvas id="history-chart" style="width:100%;max-height:220px"></canvas>
+        <div id="history-list" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section class="pg" id="pg-checklist">
+    <div class="scr">
+      <div class="card">
+        <div class="card-h"><span class="card-lbl">Checklist antes de publicar</span><span class="card-lnk" onclick="resetChecklist()">Resetar</span></div>
+        <div id="checklist-items"></div>
+      </div>
+      <div class="card" style="background:var(--bg2)">
+        <div class="card-h"><span class="card-lbl">Gerador de títulos IA</span></div>
+        <div class="frow" style="margin-bottom:8px">
+          <input class="fin" id="title-inp" placeholder="Descreva seu vídeo em uma frase..." style="flex:1">
+          <button class="btn-a" onclick="genTitles()"><i class="ti ti-sparkles"></i>Gerar títulos</button>
+        </div>
+        <div id="titles-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SQUAD -->
+  <section class="pg" id="pg-squad">
+    <div class="scr" id="squad-scr">
+      <div class="empty"><i class="ti ti-users-group"></i>Carregando squad...</div>
+    </div>
+  </section>
+
 </div><!-- /app-screen -->
 
 <script>
@@ -811,6 +894,8 @@ async function loadYTData() {
 
     localStorage.setItem('yt_channel', JSON.stringify(ytChannel));
     renderYT();
+    renderDashYT();
+    renderMonetization();
     toast('Canal conectado: ' + ytChannel.name);
   } catch(e) {
     console.error(e);
@@ -933,7 +1018,7 @@ const THEMES=[
   {id:'aurum',n:'Aurum',a:'#0d0c08',b:'#d4af37'},
   {id:'noir',n:'Noir',a:'#080808',b:'#e0e0e0'},
 ];
-const PAGES={dash:'Painel',tasks:'Tarefas',recs:'Gravações',cal:'Calendário',ai:'Assistente IA',yt:'YouTube Studio',settings:'Configurações'};
+const PAGES={dash:'Painel',tasks:'Tarefas',recs:'Gravações',cal:'Calendário',ai:'Assistente IA',yt:'YouTube Studio',settings:'Configurações',monetization:'Monetização',shorts:'Shorts',history:'Histórico de Crescimento',checklist:'Checklist de Publicação',squad:'Squad'};
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DOWS_F=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -1032,8 +1117,14 @@ function renderTasks(){renderTaskRows(document.getElementById('task-list'),tasks
 function renderDTasks(){const e=document.getElementById('d-tasks');if(e)renderTaskRows(e,tasks.filter(t=>!t.done).slice(0,4),true)}
 function addTask(){
   const v=document.getElementById('t-inp').value.trim();if(!v)return;
-  tasks.unshift({name:v,cat:document.getElementById('t-cat').value,date:document.getElementById('t-dt').value,done:false});
+  const task={id:Date.now()+'',name:v,cat:document.getElementById('t-cat').value,date:document.getElementById('t-dt').value,done:false};
+  tasks.unshift(task);
   saveTasks();renderTasks();renderDTasks();
+  // Auto-add to calendar if has date
+  if(task.date){
+    events.push({id:'task_'+task.id,taskId:task.id,title:task.name,type:'task',date:task.date,time:'',note:TCATS[task.cat]?.l||''});
+    saveEvs();
+  }
   document.getElementById('t-inp').value='';document.getElementById('t-inp').focus();
   toast('Tarefa adicionada');
 }
@@ -1281,7 +1372,389 @@ function loadProfile(){
   if(av){['av-img','sb-img'].forEach(id=>{const el=document.getElementById(id);el.src=av;el.style.display='block'});document.getElementById('av-ic').style.display='none';document.getElementById('sb-ic').style.display='none'}
 }
 
-// ── AUTH FUNCTIONS ──
+// ── TASK → CALENDAR AUTO-SYNC ──
+function taskToCalendar(task) {
+  if (!task.date) return;
+  const exists = events.find(e => e.taskId === task.id);
+  if (exists) return;
+  events.push({
+    id: 'task_' + task.id,
+    taskId: task.id,
+    title: task.name,
+    type: 'task',
+    date: task.date,
+    time: '',
+    note: TCATS[task.cat]?.l || ''
+  });
+  saveEvs();
+}
+
+// ── DASHBOARD YT STATS ──
+function renderDashYT() {
+  const el = document.getElementById('dash-yt-stats');
+  if (!el) return;
+  if (!window.ytChannel) {
+    el.innerHTML = '<div class="empty" style="padding:16px"><i class="ti ti-brand-youtube"></i>Conecte seu canal na aba YouTube Studio</div>';
+    return;
+  }
+  const c = window.ytChannel;
+  el.innerHTML = '<div class="g3">'
+    + '<div class="met"><div class="mval">' + formatNum(c.subs) + '</div><div class="mlbl">Inscritos</div><div class="mbar"><div class="mfill" style="width:60%"></div></div></div>'
+    + '<div class="met"><div class="mval">' + formatNum(c.views) + '</div><div class="mlbl">Views totais</div><div class="mbar"><div class="mfill" style="width:75%"></div></div></div>'
+    + '<div class="met"><div class="mval">' + c.videos + '</div><div class="mlbl">Vídeos</div><div class="mbar"><div class="mfill" style="width:45%"></div></div></div>'
+    + '</div>';
+}
+
+// ── MONETIZAÇÃO ──
+function renderMonetization() {
+  const el = document.getElementById('monetization-scr');
+  if (!el) return;
+  if (!window.ytChannel) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-coin"></i>Conecte seu canal na aba YouTube Studio para ver dados de monetização.</div>';
+    return;
+  }
+  const c = window.ytChannel;
+  const subs = c.subs || 0;
+  const subsOk = subs >= 1000;
+  // We can't get watch hours from basic API without Analytics scope, so show progress based on subs
+  const subsProgress = Math.min(100, Math.round((subs / 1000) * 100));
+
+  const locked = !subsOk;
+  el.innerHTML = '<div class="card" style="background:var(--bg2)">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+    + '<div style="width:44px;height:44px;border-radius:50%;background:' + (locked ? 'var(--bg3)' : 'color-mix(in srgb,var(--amber) 18%,transparent)') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+    + '<i class="ti ti-' + (locked ? 'lock' : 'coin') + '" style="font-size:20px;color:' + (locked ? 'var(--txt2)' : 'var(--amber)') + '"></i></div>'
+    + '<div><div style="font-family:var(--serif);font-size:18px;font-style:italic;color:var(--txt0)">' + (locked ? 'Monetização bloqueada' : 'Monetização disponível') + '</div>'
+    + '<div style="font-size:11px;color:var(--txt2);margin-top:2px">' + (locked ? 'Complete os requisitos abaixo' : 'Seu canal está elegível') + '</div>'
+    + '</div></div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px">'
+    + reqRow('1.000 inscritos', subs + ' / 1.000', subsOk, subsProgress)
+    + reqRow('4.000 horas assistidas', 'Conecte Analytics para ver', false, 0)
+    + reqRow('Sem avisos de Community Guidelines', 'Verifique no YouTube Studio', true, 100)
+    + reqRow('Conta AdSense vinculada', 'Configure no YouTube Studio', false, 0)
+    + '</div></div>'
+    + (locked ? '' : '<div class="card"><div class="card-h"><span class="card-lbl">Próximos passos</span></div><div style="font-size:12px;color:var(--txt1);line-height:1.7">Acesse o <strong style="color:var(--acc2)">YouTube Studio → Monetização</strong> para ativar o Programa de Parceiros do YouTube (YPP). Você precisará vincular uma conta AdSense e aceitar os termos.</div></div>');
+}
+
+function reqRow(label, value, ok, progress) {
+  return '<div style="background:var(--bg3);border-radius:8px;padding:10px 12px">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'
+    + '<span style="font-size:11px;color:var(--txt1)">' + label + '</span>'
+    + '<span style="font-size:10px;color:' + (ok ? 'var(--green)' : 'var(--amber)') + '">' + (ok ? '✓ Concluído' : value) + '</span>'
+    + '</div>'
+    + '<div class="mbar"><div class="mfill" style="width:' + progress + '%;background:' + (ok ? 'var(--green)' : 'var(--amber)') + '"></div></div>'
+    + '</div>';
+}
+
+// ── SHORTS ──
+let shorts = JSON.parse(localStorage.getItem('ch_shorts') || '[]');
+function saveShorts() {
+  localStorage.setItem('ch_shorts', JSON.stringify(shorts));
+  if (window._fbUser) window.fbSaveData(window._fbUser.uid, 'shorts', shorts).catch(() => {});
+}
+const SHORT_ST = {
+  idea: { l: 'Ideia', c: 's-raw' },
+  script: { l: 'Roteiro', c: 's-edt' },
+  rec: { l: 'Gravando', c: 's-rec' },
+  edit: { l: 'Editando', c: 's-edt' },
+  pub: { l: 'Publicado', c: 's-pub' }
+};
+function renderShorts() {
+  const el = document.getElementById('shorts-list');
+  if (!el) return;
+  if (!shorts.length) { el.innerHTML = '<div class="empty"><i class="ti ti-device-mobile"></i>Nenhum Short planejado ainda.</div>'; return; }
+  el.innerHTML = '';
+  shorts.forEach((s, i) => {
+    const st = SHORT_ST[s.st] || SHORT_ST.idea;
+    const dl = dateLabel(s.date);
+    const d = document.createElement('div'); d.className = 'trow';
+    d.innerHTML = '<i class="ti ti-device-mobile" style="font-size:14px;color:var(--txt2);flex-shrink:0"></i>'
+      + '<span class="tlbl">' + s.name + '</span>'
+      + '<span class="ttag ' + st.c + '">' + st.l + '</span>'
+      + (dl ? '<span class="tdate ' + dl.cls + '">' + dl.txt + '</span>' : '')
+      + '<button class="xb" style="opacity:1"><i class="ti ti-x"></i></button>';
+    d.querySelector('.xb').onclick = () => { shorts.splice(i, 1); saveShorts(); renderShorts(); };
+    el.appendChild(d);
+  });
+}
+function addShort() {
+  const v = document.getElementById('sh-inp').value.trim();
+  if (!v) return;
+  const s = { id: Date.now() + '', name: v, date: document.getElementById('sh-dt').value, st: document.getElementById('sh-st').value };
+  shorts.unshift(s);
+  saveShorts();
+  renderShorts();
+  // Add to calendar if has date
+  if (s.date) {
+    events.push({ id: 'short_' + s.id, title: '🎬 Short: ' + v, type: 'rec', date: s.date, time: '', note: 'Short' });
+    saveEvs();
+  }
+  document.getElementById('sh-inp').value = '';
+  toast('Short adicionado');
+}
+
+// ── HISTÓRICO ──
+let growthHistory = JSON.parse(localStorage.getItem('ch_history') || '[]');
+function saveHistory() { localStorage.setItem('ch_history', JSON.stringify(growthHistory)); }
+function addHistoryEntry() {
+  const subs = parseInt(document.getElementById('h-subs').value);
+  const views = parseInt(document.getElementById('h-views').value);
+  const dt = document.getElementById('h-dt').value;
+  if (!dt || isNaN(subs)) { toast('Preencha inscritos e data'); return; }
+  growthHistory.push({ date: dt, subs, views: views || 0 });
+  growthHistory.sort((a, b) => a.date.localeCompare(b.date));
+  saveHistory();
+  renderHistory();
+  document.getElementById('h-subs').value = '';
+  document.getElementById('h-views').value = '';
+  toast('Entrada registrada');
+}
+function renderHistory() {
+  const listEl = document.getElementById('history-list');
+  const canvas = document.getElementById('history-chart');
+  if (!listEl || !canvas) return;
+  if (!growthHistory.length) {
+    listEl.innerHTML = '<div class="empty"><i class="ti ti-chart-line"></i>Registre seu primeiro dado acima.</div>';
+    canvas.style.display = 'none'; return;
+  }
+  canvas.style.display = 'block';
+  // Simple canvas chart
+  const W = canvas.offsetWidth || 500, H = 180;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  const maxSubs = Math.max(...growthHistory.map(e => e.subs), 1);
+  const pts = growthHistory.map((e, i) => ({
+    x: (i / Math.max(growthHistory.length - 1, 1)) * (W - 40) + 20,
+    y: H - 20 - ((e.subs / maxSubs) * (H - 40))
+  }));
+  // gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(200,169,110,.35)');
+  grad.addColorStop(1, 'rgba(200,169,110,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, H - 20);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length - 1].x, H - 20);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  // line
+  ctx.beginPath();
+  ctx.strokeStyle = '#c8a96e'; ctx.lineWidth = 2;
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+  // dots
+  pts.forEach((p, i) => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#c8a96e'; ctx.fill();
+  });
+  // list
+  listEl.innerHTML = growthHistory.slice().reverse().map((e, i) => {
+    const prev = growthHistory[growthHistory.length - 2 - i];
+    const diff = prev ? e.subs - prev.subs : 0;
+    return '<div class="trow"><span class="tdate">' + e.date + '</span>'
+      + '<span class="tlbl" style="text-align:right">' + formatNum(e.subs) + ' inscritos</span>'
+      + (diff > 0 ? '<span style="font-size:10px;color:var(--green)">+' + diff + '</span>' : '')
+      + '<button class="xb" style="opacity:1" onclick="growthHistory.splice(' + (growthHistory.length - 1 - i) + ',1);saveHistory();renderHistory()"><i class="ti ti-x"></i></button>'
+      + '</div>';
+  }).join('');
+}
+
+// ── CHECKLIST ──
+const CHECKLIST_DEFAULT = [
+  { id: 1, text: 'Thumbnail criada e testada em miniatura', done: false },
+  { id: 2, text: 'Título otimizado (máx 60 caracteres)', done: false },
+  { id: 3, text: 'Descrição com palavras-chave nos primeiros 150 caracteres', done: false },
+  { id: 4, text: 'Tags adicionadas (10-15 tags relevantes)', done: false },
+  { id: 5, text: 'Capítulos adicionados na descrição', done: false },
+  { id: 6, text: 'Tela final configurada (últimos 20 segundos)', done: false },
+  { id: 7, text: 'Cards adicionados no vídeo', done: false },
+  { id: 8, text: 'Categoria e idioma definidos', done: false },
+  { id: 9, text: 'Playlist adicionada', done: false },
+  { id: 10, text: 'Horário de publicação agendado', done: false },
+  { id: 11, text: 'Resposta para primeiros comentários preparada', done: false },
+  { id: 12, text: 'Post nas redes sociais preparado', done: false },
+];
+let checklistItems = JSON.parse(localStorage.getItem('ch_checklist') || JSON.stringify(CHECKLIST_DEFAULT));
+function saveChecklist() { localStorage.setItem('ch_checklist', JSON.stringify(checklistItems)); }
+function resetChecklist() {
+  if (!confirm('Resetar checklist?')) return;
+  checklistItems = CHECKLIST_DEFAULT.map(i => ({ ...i, done: false }));
+  saveChecklist(); renderChecklist();
+}
+function renderChecklist() {
+  const el = document.getElementById('checklist-items');
+  if (!el) return;
+  const done = checklistItems.filter(i => i.done).length;
+  el.innerHTML = '<div style="margin-bottom:12px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px"><span>' + done + ' de ' + checklistItems.length + ' concluídos</span><span>' + Math.round((done/checklistItems.length)*100) + '%</span></div>'
+    + '<div class="mbar"><div class="mfill" style="width:' + Math.round((done/checklistItems.length)*100) + '%;background:' + (done===checklistItems.length?'var(--green)':'var(--acc)') + ';transition:width .4s ease"></div></div>'
+    + '</div>';
+  checklistItems.forEach((item, i) => {
+    const d = document.createElement('div'); d.className = 'trow';
+    d.innerHTML = '<div class="tck' + (item.done ? ' on' : '') + '"></div>'
+      + '<span class="tlbl' + (item.done ? ' done' : '') + '">' + item.text + '</span>';
+    d.querySelector('.tck').onclick = () => {
+      checklistItems[i].done = !checklistItems[i].done;
+      saveChecklist(); renderChecklist();
+    };
+    el.appendChild(d);
+  });
+}
+
+// ── GERADOR DE TÍTULOS ──
+function genTitles() {
+  const inp = document.getElementById('title-inp');
+  const desc = inp.value.trim();
+  if (!desc) { toast('Descreva seu vídeo primeiro'); return; }
+  const out = document.getElementById('titles-out');
+  out.innerHTML = '<div style="font-size:11px;color:var(--txt2);padding:8px 0">Gerando títulos...</div>';
+  setTimeout(() => {
+    const templates = [
+      'Como ' + desc + ' (Guia Completo)',
+      'Eu tentei ' + desc + ' por 30 dias — resultado surpreendente',
+      desc + ': O que ninguém te conta',
+      'O erro que todo mundo comete ao ' + desc,
+      desc + ' do ZERO ao AVANÇADO em ' + (Math.floor(Math.random()*8)+3) + ' minutos',
+    ];
+    out.innerHTML = templates.map((t, i) =>
+      '<div class="trow" style="cursor:pointer" onclick="navigator.clipboard.writeText('' + t.replace(/'/g, '') + '');toast('Título copiado!')">'
+      + '<span style="font-size:10px;color:var(--acc2);font-weight:600;flex-shrink:0">' + (i+1) + '</span>'
+      + '<span class="tlbl">' + t + '</span>'
+      + '<i class="ti ti-copy" style="font-size:13px;color:var(--txt2)"></i>'
+      + '</div>'
+    ).join('');
+  }, 600);
+}
+
+// ── SQUAD ──
+let mySquad = JSON.parse(localStorage.getItem('ch_squad') || 'null');
+function renderSquad() {
+  const el = document.getElementById('squad-scr');
+  if (!el) return;
+  if (!window._fbUser) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-users-group"></i>Faça login para usar o Squad.</div>';
+    return;
+  }
+  if (!mySquad) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:28px">'
+      + '<i class="ti ti-users-group" style="font-size:36px;color:var(--acc);display:block;margin-bottom:12px"></i>'
+      + '<div style="font-family:var(--serif);font-size:19px;font-style:italic;color:var(--txt0);margin-bottom:6px">Crie sua Squad</div>'
+      + '<div style="font-size:12px;color:var(--txt2);line-height:1.6;margin-bottom:20px;max-width:280px;margin-left:auto;margin-right:auto">Convide colaboradores, atribua tarefas e compartilhe um calendário com sua equipe.</div>'
+      + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
+      + '<button class="btn-a" onclick="createSquad()"><i class="ti ti-plus"></i>Criar Squad</button>'
+      + '<button class="btn-g" onclick="joinSquad()"><i class="ti ti-door-enter"></i>Entrar com código</button>'
+      + '</div></div>';
+    return;
+  }
+  const members = mySquad.members || [];
+  el.innerHTML = '<div class="card" style="background:var(--bg2)">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+    + '<div><div style="font-family:var(--serif);font-size:17px;font-style:italic;color:var(--txt0)">' + mySquad.name + '</div>'
+    + '<div style="font-size:10px;color:var(--txt2);margin-top:2px">' + members.length + ' membro' + (members.length!==1?'s':'') + '</div></div>'
+    + '<button class="btn-g" onclick="copyInvite()" style="font-size:10px;padding:5px 10px"><i class="ti ti-link" style="font-size:12px"></i>Copiar convite</button>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+    + members.map(m => '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bg3)">'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-user" style="font-size:13px;color:var(--txt2)"></i></div>'
+      + '<span style="font-size:12px;color:var(--txt1);flex:1">' + m.name + '</span>'
+      + '<span style="font-size:9px;color:var(--txt2)">' + m.email + '</span>'
+      + '</div>').join('')
+    + '</div></div>'
+    + '<div class="card">'
+    + '<div class="card-h"><span class="card-lbl">Tarefas da Squad</span><span class="card-lnk" onclick="showSquadTaskModal()">+ Nova tarefa</span></div>'
+    + '<div id="squad-tasks">' + renderSquadTasks() + '</div></div>';
+}
+
+function renderSquadTasks() {
+  const st = JSON.parse(localStorage.getItem('ch_squad_tasks') || '[]');
+  if (!st.length) return '<div class="empty" style="padding:16px"><i class="ti ti-clipboard"></i>Nenhuma tarefa de squad ainda.</div>';
+  return st.map((t, i) => '<div class="trow">'
+    + '<div class="tck' + (t.done?' on':'') + '" onclick="toggleSquadTask(' + i + ')"></div>'
+    + '<span class="tlbl' + (t.done?' done':'') + '">' + t.name + '</span>'
+    + '<span style="font-size:9px;color:var(--txt2)">' + (t.assignees||[]).join(', ') + '</span>'
+    + (t.date?'<span class="tdate">' + t.date + '</span>':'')
+    + '</div>').join('');
+}
+
+function toggleSquadTask(i) {
+  const st = JSON.parse(localStorage.getItem('ch_squad_tasks') || '[]');
+  st[i].done = !st[i].done;
+  localStorage.setItem('ch_squad_tasks', JSON.stringify(st));
+  document.getElementById('squad-tasks').innerHTML = renderSquadTasks();
+}
+
+function createSquad() {
+  const name = prompt('Nome da sua Squad:');
+  if (!name) return;
+  mySquad = {
+    id: Date.now() + '',
+    name,
+    members: [{ name: window._fbUser.displayName || 'Você', email: window._fbUser.email, uid: window._fbUser.uid }],
+    createdAt: Date.now()
+  };
+  localStorage.setItem('ch_squad', JSON.stringify(mySquad));
+  renderSquad();
+  toast('Squad "' + name + '" criada!');
+}
+
+function joinSquad() {
+  const code = prompt('Cole o código de convite:');
+  if (!code) return;
+  toast('Funcionalidade completa disponível em breve!');
+}
+
+function copyInvite() {
+  if (!mySquad) return;
+  const link = window.location.origin + window.location.pathname + '?squad=' + mySquad.id;
+  navigator.clipboard.writeText(link).then(() => toast('Link copiado!'));
+}
+
+function showSquadTaskModal() {
+  const name = prompt('Nome da tarefa:');
+  if (!name) return;
+  const assignees = prompt('Quem participa? (separe por vírgula)');
+  const date = prompt('Data (AAAA-MM-DD) ou deixe vazio:');
+  const st = JSON.parse(localStorage.getItem('ch_squad_tasks') || '[]');
+  st.unshift({ name, assignees: assignees ? assignees.split(',').map(s=>s.trim()) : [], date: date||'', done: false });
+  localStorage.setItem('ch_squad_tasks', JSON.stringify(st));
+  // Add to calendar
+  if (date) {
+    events.push({ id: 'squad_' + Date.now(), title: '👥 ' + name, type: 'task', date, time: '', note: assignees||'' });
+    saveEvs();
+  }
+  document.getElementById('squad-tasks').innerHTML = renderSquadTasks();
+  toast('Tarefa de squad criada');
+}
+
+// ── UPDATE go() TO RENDER NEW PAGES ──
+const _origGo = go;
+// Override go to handle new pages
+function go(p) {
+  document.querySelectorAll('.pg').forEach(e=>e.classList.remove('act'));
+  document.querySelectorAll('.ni[data-p]').forEach(e=>e.classList.toggle('act',e.dataset.p===p));
+  const pg = document.getElementById('pg-'+p);
+  if (pg) pg.classList.add('act');
+  document.getElementById('pg-title').textContent=PAGES[p]||p;
+  if(p==='tasks')renderTasks();
+  if(p==='recs')renderRecs();
+  if(p==='cal')renderCal();
+  if(p==='dash'){renderDTasks();renderDRecs();renderDashYT();}
+  if(p==='monetization')renderMonetization();
+  if(p==='shorts')renderShorts();
+  if(p==='history')renderHistory();
+  if(p==='checklist')renderChecklist();
+  if(p==='squad')renderSquad();
+  if(p==='yt'){renderYT();setTimeout(()=>{renderDashYT();renderMonetization();},500);}
+}
+
+// ── UPDATE addTask TO SYNC CALENDAR ──
+const _origAddTask = addTask;
+
+// ── PATCH loadUserData TO LOAD SHORTS ──
+const _origLoadUserData = window.loadUserData;
+
+// ── AUTH FUNCTIONS ──// ── AUTH FUNCTIONS ──
 function showRegister(){
   document.getElementById('form-login').style.display='none';
   document.getElementById('form-register').style.display='flex';
@@ -1336,6 +1809,13 @@ renderDTasks();
 renderDRecs();
 checkOAuthCallback();
 renderYT();
+renderDashYT();
+// Re-render dash YT when ytChannel is set
+Object.defineProperty(window,'ytChannel',{
+  get(){ return this._ytChannel; },
+  set(v){ this._ytChannel=v; renderDashYT(); renderMonetization(); },
+  configurable:true
+});
 </script>
 </body>
 </html>
