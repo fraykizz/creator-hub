@@ -27,86 +27,93 @@ html,body{height:100%;overflow:hidden;-webkit-font-smoothing:antialiased}
 [data-theme="aurum"]{--bg:#0d0c08;--bg1:#161410;--bg2:#201e18;--bg3:#2a2820;--bg4:#353228;--acc:#d4af37;--acc2:#e8c84a;--acc3:#f5e080;--txt0:#fbf8f0;--txt1:#c8c0a0;--txt2:#7a7458;--txt3:#3c3828}
 [data-theme="noir"]{--bg:#080808;--bg1:#0f0f0f;--bg2:#161616;--bg3:#1f1f1f;--bg4:#282828;--acc:#e0e0e0;--acc2:#f0f0f0;--acc3:#ffffff;--txt0:#ffffff;--txt1:#aaaaaa;--txt2:#555555;--txt3:#2a2a2a}
 
-body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex;height:100vh;transition:background .25s,color .25s}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex;height:100vh;transition:background .3s,color .3s}
 
-/* SIDEBAR */
-.sb{width:54px;background:var(--bg1);border-right:1px solid var(--bg3);display:flex;flex-direction:column;align-items:center;padding:12px 0 10px;flex-shrink:0;transition:width .25s}
+/* ── PAGE TRANSITIONS ── */
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.pg{display:none;flex:1;flex-direction:column;overflow:hidden}
+.pg.act{display:flex;animation:fadeSlideIn .28s cubic-bezier(.4,0,.2,1)}
+.card{background:var(--bg1);border:1px solid var(--bg3);border-radius:12px;padding:15px;
+  transition:border-color .2s,transform .2s,box-shadow .2s;animation:fadeIn .3s ease}
+.card:hover{border-color:var(--bg4);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.15)}
+
+/* ── SIDEBAR ── */
+.sb{width:54px;background:var(--bg1);border-right:1px solid var(--bg3);display:flex;flex-direction:column;align-items:center;padding:12px 0 10px;flex-shrink:0;transition:width .25s cubic-bezier(.4,0,.2,1)}
 .sb.open{width:196px;align-items:flex-start}
-.sb-logo{width:32px;height:32px;border-radius:8px;background:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:12px;cursor:pointer}
+.sb-logo{width:32px;height:32px;border-radius:9px;background:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:14px;cursor:pointer;transition:transform .2s,background .2s}
+.sb-logo:hover{transform:scale(1.08);background:var(--acc2)}
 .sb-logo i{font-size:16px;color:var(--bg)}
 .sb.open .sb-logo{margin-left:12px}
-.sb-lbl{font-size:7px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);padding:8px 0 3px 14px;display:none;width:100%;font-family:var(--sans)}
+.sb-lbl{font-size:7px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);padding:8px 0 3px 14px;display:none;width:100%}
 .sb.open .sb-lbl{display:block}
-.ni{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .15s;position:relative;flex-shrink:0;text-decoration:none}
-.ni:hover{background:var(--bg3);color:var(--txt1)}
+.ni{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .18s cubic-bezier(.4,0,.2,1);position:relative;flex-shrink:0}
+.ni:hover{background:var(--bg3);color:var(--txt1);transform:translateX(2px)}
 .ni.act{background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc2)}
-.ni.act::before{content:'';position:absolute;left:-10px;top:5px;bottom:5px;width:2px;background:var(--acc);border-radius:0 2px 2px 0}
+.ni.act::before{content:'';position:absolute;left:-10px;top:6px;bottom:6px;width:2px;background:var(--acc);border-radius:0 2px 2px 0;transition:all .18s}
 .ni i{font-size:17px}
 .ni span{display:none;font-size:11.5px;margin-left:9px;white-space:nowrap}
 .sb.open .ni{width:calc(100% - 20px);margin:0 10px;justify-content:flex-start;padding-left:9px}
 .sb.open .ni span{display:block}
-.sb.open .ni.act::before{left:-10px}
-.sb-sep{width:22px;height:1px;background:var(--bg3);margin:4px 0;flex-shrink:0}
-.sb.open .sb-sep{width:calc(100% - 20px);margin:4px 10px}
+.sb-sep{width:22px;height:1px;background:var(--bg3);margin:5px 0;flex-shrink:0;transition:width .25s}
+.sb.open .sb-sep{width:calc(100% - 20px);margin:5px 10px}
 .sb-btm{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:4px;width:100%}
 .sb.open .sb-btm{align-items:flex-start;padding:0 10px}
-.av-sb{width:30px;height:30px;border-radius:50%;background:var(--bg3);border:2px solid var(--bg4);overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s;flex-shrink:0}
-.av-sb:hover{border-color:var(--acc)}
+.av-sb{width:30px;height:30px;border-radius:50%;background:var(--bg3);border:2px solid var(--bg4);overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,transform .2s;flex-shrink:0}
+.av-sb:hover{border-color:var(--acc);transform:scale(1.05)}
 .av-sb img{width:100%;height:100%;object-fit:cover;display:none}
 .av-sb i{font-size:14px;color:var(--txt2)}
-.sb.open .av-sb{width:100%;border-radius:8px;height:40px;justify-content:flex-start;padding:0 9px;gap:8px}
+.sb.open .av-sb{width:100%;border-radius:9px;height:40px;justify-content:flex-start;padding:0 9px;gap:8px}
 .av-sb .avname{display:none;font-size:11px;color:var(--txt1)}
 .sb.open .av-sb .avname{display:block}
 
-/* MAIN */
+/* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-
-/* TOPBAR */
 .topbar{height:46px;background:var(--bg1);border-bottom:1px solid var(--bg3);display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0}
-.tb-toggle{width:27px;height:27px;border-radius:6px;background:transparent;border:1px solid var(--bg4);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .15s}
-.tb-toggle:hover{background:var(--bg2);color:var(--txt0)}
-.tb-toggle i{font-size:13px}
-.pg-title{font-family:var(--serif);font-size:17px;color:var(--txt0);font-style:italic;flex:1}
+.tb-tog{width:27px;height:27px;border-radius:7px;background:transparent;border:1px solid var(--bg4);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .18s}
+.tb-tog:hover{background:var(--bg2);color:var(--txt0);transform:scale(1.05)}
+.tb-tog i{font-size:13px}
+.pg-title{font-family:var(--serif);font-size:17px;color:var(--txt0);font-style:italic;flex:1;transition:opacity .2s}
 .tb-right{display:flex;align-items:center;gap:6px}
 .sync{display:flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bg4);border-radius:20px;padding:3px 9px;font-size:9px;color:var(--txt2)}
 .sdot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.ib{width:27px;height:27px;border-radius:6px;background:transparent;border:1px solid var(--bg4);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .15s}
-.ib:hover{background:var(--bg2);color:var(--txt0)}
+.ib{width:27px;height:27px;border-radius:7px;background:transparent;border:1px solid var(--bg4);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .18s}
+.ib:hover{background:var(--bg2);color:var(--txt0);transform:scale(1.05)}
 .ib i{font-size:13px}
 
-/* PAGES */
-.pg{display:none;flex:1;flex-direction:column;overflow:hidden}
-.pg.act{display:flex}
+/* ── SCROLL ── */
 .scr{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:13px}
 .scr::-webkit-scrollbar{width:3px}
 .scr::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
 
-/* CARDS */
-.card{background:var(--bg1);border:1px solid var(--bg3);border-radius:12px;padding:15px}
+/* ── CARD HEADER ── */
 .card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .card-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2)}
-.card-lnk{font-size:9px;color:var(--acc);cursor:pointer;transition:color .14s}
+.card-lnk{font-size:9px;color:var(--acc);cursor:pointer;transition:color .15s}
 .card-lnk:hover{color:var(--acc2)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
 @media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
 
-/* METRICS */
-.met{background:var(--bg2);border:1px solid var(--bg3);border-radius:9px;padding:12px}
+/* ── METRICS ── */
+.met{background:var(--bg2);border:1px solid var(--bg3);border-radius:9px;padding:12px;transition:all .2s}
+.met:hover{border-color:var(--bg4);transform:translateY(-1px)}
 .mval{font-family:var(--serif);font-size:22px;color:var(--txt0);line-height:1}
 .mlbl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);margin-top:4px}
 .mchg{font-size:9px;margin-top:4px}.up{color:var(--green)}.dn{color:var(--red)}
-.mbar{height:2px;background:var(--bg4);border-radius:1px;margin-top:7px}
-.mfill{height:100%;border-radius:1px;background:var(--acc)}
+.mbar{height:2px;background:var(--bg4);border-radius:1px;margin-top:7px;overflow:hidden}
+.mfill{height:100%;border-radius:1px;background:var(--acc);transition:width .8s cubic-bezier(.4,0,.2,1)}
 
-/* TASKS */
-.trow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bg3)}
+/* ── TASKS ── */
+.trow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bg3);transition:background .15s;border-radius:4px}
 .trow:last-child{border-bottom:none;padding-bottom:0}
-.tck{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--bg4);flex-shrink:0;cursor:pointer;transition:all .14s;display:flex;align-items:center;justify-content:center}
-.tck:hover{border-color:var(--acc)}
-.tck.on{background:var(--acc);border-color:var(--acc)}
-.tck.on::after{content:'✓';font-size:8px;color:var(--bg);font-weight:700}
+.trow:hover{background:color-mix(in srgb,var(--acc) 4%,transparent);padding-left:4px}
+.tck{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--bg4);flex-shrink:0;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center}
+.tck:hover{border-color:var(--acc);transform:scale(1.1)}
+.tck.on{background:var(--acc);border-color:var(--acc);animation:checkPop .2s cubic-bezier(.4,0,.2,1)}
+@keyframes checkPop{0%{transform:scale(.8)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+.tck.on::after{content:'✓';font-size:9px;color:var(--bg);font-weight:700}
 .tlbl{font-size:12px;color:var(--txt1);flex:1}
 .tlbl.done{text-decoration:line-through;color:var(--txt2)}
 .ttag{font-size:8px;padding:2px 7px;border-radius:20px}
@@ -114,16 +121,22 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .tt-f{background:rgba(90,142,184,.18);color:#7aadd4}
 .tt-e{background:rgba(212,160,96,.18);color:var(--amber)}
 .tt-p{background:rgba(90,190,122,.16);color:var(--green)}
-.xb{background:none;border:none;color:var(--txt3);cursor:pointer;padding:2px;border-radius:3px;transition:color .14s;display:flex}
-.xb:hover{color:var(--red)}
+.tdate{font-size:9px;color:var(--txt2);white-space:nowrap}
+.tdate.overdue{color:var(--red)}
+.tdate.soon{color:var(--amber)}
+.xb{background:none;border:none;color:var(--txt3);cursor:pointer;padding:2px;border-radius:4px;transition:all .15s;display:flex;opacity:0}
+.trow:hover .xb{opacity:1}
+.xb:hover{color:var(--red);transform:scale(1.15)}
 .xb i{font-size:12px}
 
-/* RECS */
-.rrow{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--bg3)}
+/* ── RECS ── */
+.rrow{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--bg3);transition:background .15s}
 .rrow:last-child{border-bottom:none;padding-bottom:0}
-.rthumb{width:48px;height:28px;border-radius:5px;background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.rrow:hover{background:color-mix(in srgb,var(--acc) 4%,transparent);padding-left:4px;border-radius:4px}
+.rthumb{width:48px;height:28px;border-radius:5px;background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;transition:transform .2s}
+.rrow:hover .rthumb{transform:scale(1.05)}
 .rthumb i{font-size:13px;color:var(--txt2)}
-.rprog{position:absolute;bottom:0;left:0;height:2px;background:var(--acc)}
+.rprog{position:absolute;bottom:0;left:0;height:2px;background:var(--acc);transition:width .6s ease}
 .rname{font-size:12px;color:var(--txt1);font-weight:500}
 .rmeta{font-size:9px;color:var(--txt2);margin-top:1px}
 .stag{font-size:8px;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
@@ -132,23 +145,24 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .s-edt{background:rgba(212,160,96,.18);color:var(--amber)}
 .s-pub{background:rgba(90,190,122,.16);color:var(--green)}
 
-/* EMPTY */
-.empty{text-align:center;padding:26px 16px;color:var(--txt2);font-size:11px}
+/* ── EMPTY ── */
+.empty{text-align:center;padding:26px 16px;color:var(--txt2);font-size:11px;animation:fadeIn .3s ease}
 .empty i{font-size:28px;display:block;margin-bottom:8px;color:var(--bg4)}
 
-/* INPUTS */
-.fin{background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--txt0);font-family:var(--sans);outline:none;transition:border-color .14s}
-.fin:focus{border-color:color-mix(in srgb,var(--acc) 55%,transparent)}
+/* ── INPUTS ── */
+.fin{background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--txt0);font-family:var(--sans);outline:none;transition:all .18s}
+.fin:focus{border-color:color-mix(in srgb,var(--acc) 55%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 8%,transparent)}
 .fin::placeholder{color:var(--txt3)}
 .fin option{background:var(--bg2)}
 .frow{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-.btn-a{background:var(--acc);color:var(--bg);border:none;border-radius:8px;padding:8px 15px;font-size:11px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:background .14s;display:flex;align-items:center;gap:5px;white-space:nowrap}
-.btn-a:hover{background:var(--acc2)}
+.btn-a{background:var(--acc);color:var(--bg);border:none;border-radius:8px;padding:8px 15px;font-size:11px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-a:hover{background:var(--acc2);transform:translateY(-1px);box-shadow:0 4px 12px color-mix(in srgb,var(--acc) 30%,transparent)}
+.btn-a:active{transform:translateY(0)}
 .btn-a i{font-size:12px}
-.btn-g{background:transparent;color:var(--txt1);border:1px solid var(--bg4);border-radius:8px;padding:7px 13px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all .14s}
-.btn-g:hover{background:var(--bg3)}
+.btn-g{background:transparent;color:var(--txt1);border:1px solid var(--bg4);border-radius:8px;padding:7px 13px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all .18s}
+.btn-g:hover{background:var(--bg3);transform:translateY(-1px)}
 
-/* CALENDAR */
+/* ── CALENDAR ── */
 .cal-wrap{display:flex;flex:1;overflow:hidden}
 .cal-sb{width:188px;border-right:1px solid var(--bg3);padding:14px;display:flex;flex-direction:column;gap:14px;flex-shrink:0;overflow-y:auto}
 .cal-sb::-webkit-scrollbar{width:2px}
@@ -156,47 +170,50 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .cal-main{flex:1;display:flex;flex-direction:column;padding:14px;overflow:hidden;min-width:0}
 .mn-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
 .mn-lbl{font-size:11px;font-weight:500;color:var(--txt1)}
-.mn-btn{width:18px;height:18px;border:none;background:transparent;color:var(--txt2);cursor:pointer;border-radius:3px;display:flex;align-items:center;justify-content:center;transition:all .13s}
+.mn-btn{width:18px;height:18px;border:none;background:transparent;color:var(--txt2);cursor:pointer;border-radius:3px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .mn-btn:hover{background:var(--bg3);color:var(--txt0)}
 .mn-btn i{font-size:11px}
 .mn-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
 .mn-dow{font-size:7px;color:var(--txt3);text-align:center;padding:2px 0}
-.mn-d{font-size:8px;color:var(--txt2);text-align:center;padding:3px 1px;border-radius:4px;cursor:pointer;transition:all .11s;line-height:1.7}
-.mn-d:hover{background:var(--bg3);color:var(--txt1)}
+.mn-d{font-size:8px;color:var(--txt2);text-align:center;padding:3px 1px;border-radius:4px;cursor:pointer;transition:all .12s;line-height:1.7}
+.mn-d:hover{background:var(--bg3);color:var(--txt1);transform:scale(1.1)}
 .mn-d.td{background:var(--acc);color:var(--bg);font-weight:700}
 .mn-d.sel{background:color-mix(in srgb,var(--acc) 24%,transparent);color:var(--acc2)}
 .mn-d.om{color:var(--txt3)}
 .mn-d.hev::after{content:'';display:block;width:3px;height:3px;border-radius:50%;background:var(--acc2);margin:0 auto}
 .fl-lbl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);margin-bottom:6px}
-.fi{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:6px;cursor:pointer;transition:background .12s}
-.fi:hover{background:var(--bg2)}
+.fi{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:6px;cursor:pointer;transition:all .15s}
+.fi:hover{background:var(--bg2);transform:translateX(2px)}
 .fi.on{background:color-mix(in srgb,var(--acc) 9%,transparent)}
-.fi-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.fi-lbl{font-size:10px;color:var(--txt2);transition:color .12s}
+.fi-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:transform .15s}
+.fi:hover .fi-dot{transform:scale(1.3)}
+.fi-lbl{font-size:10px;color:var(--txt2);transition:color .15s}
 .fi.on .fi-lbl{color:var(--txt1)}
 .cal-tb{display:flex;align-items:center;gap:7px;margin-bottom:11px;flex-wrap:wrap}
 .cal-title{font-family:var(--serif);font-size:19px;font-style:italic;color:var(--txt0);flex:1}
-.cnb{height:26px;padding:0 9px;border-radius:6px;background:var(--bg2);border:1px solid var(--bg3);color:var(--txt1);font-size:9px;cursor:pointer;font-family:var(--sans);transition:all .13s;display:flex;align-items:center;gap:3px}
-.cnb:hover{background:var(--bg3)}
+.cnb{height:26px;padding:0 9px;border-radius:6px;background:var(--bg2);border:1px solid var(--bg3);color:var(--txt1);font-size:9px;cursor:pointer;font-family:var(--sans);transition:all .15s;display:flex;align-items:center;gap:3px}
+.cnb:hover{background:var(--bg3);transform:translateY(-1px)}
 .cnb i{font-size:11px}
 .vt{display:flex;gap:2px;background:var(--bg2);padding:2px;border-radius:6px}
-.vb{font-size:9px;padding:3px 9px;border-radius:4px;color:var(--txt2);cursor:pointer;transition:all .13s}
+.vb{font-size:9px;padding:3px 9px;border-radius:4px;color:var(--txt2);cursor:pointer;transition:all .15s}
 .vb.on{background:var(--bg4);color:var(--acc2)}
-.nev{height:26px;padding:0 11px;border-radius:6px;background:var(--acc);border:none;color:var(--bg);font-size:9px;font-family:var(--sans);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .13s}
-.nev:hover{background:var(--acc2)}
+.nev{height:26px;padding:0 11px;border-radius:6px;background:var(--acc);border:none;color:var(--bg);font-size:9px;font-family:var(--sans);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .18s}
+.nev:hover{background:var(--acc2);transform:translateY(-1px);box-shadow:0 3px 10px color-mix(in srgb,var(--acc) 30%,transparent)}
 .nev i{font-size:11px}
 .dow-hdr{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--bg3);flex-shrink:0}
 .dow-c{font-size:8px;color:var(--txt3);text-align:center;padding:5px 0;letter-spacing:.07em;text-transform:uppercase}
 .mgrid{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);flex:1;overflow:hidden}
-.dc{border-right:1px solid var(--bg3);border-bottom:1px solid var(--bg3);padding:4px 5px;cursor:pointer;transition:background .11s;overflow:hidden;display:flex;flex-direction:column;gap:2px}
+.dc{border-right:1px solid var(--bg3);border-bottom:1px solid var(--bg3);padding:4px 5px;cursor:pointer;transition:background .15s;overflow:hidden;display:flex;flex-direction:column;gap:2px}
 .dc:nth-child(7n){border-right:none}
 .dc:hover{background:var(--bg2)}
 .dc.tc{background:color-mix(in srgb,var(--acc) 7%,transparent)}
 .dc.sc{background:color-mix(in srgb,var(--acc) 11%,transparent)}
 .dc.om .dn{color:var(--txt3)}
-.dn{font-size:10px;color:var(--txt1);font-weight:500;width:19px;height:19px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.dn{font-size:10px;color:var(--txt1);font-weight:500;width:19px;height:19px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .15s}
+.dc:hover .dn{background:var(--bg3)}
 .dn.tn{background:var(--acc);color:var(--bg);font-weight:700}
-.ec{font-size:7.5px;padding:1.5px 5px;border-radius:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ec{font-size:7.5px;padding:1.5px 5px;border-radius:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:opacity .15s}
+.ec:hover{opacity:.8}
 .ec-t{background:color-mix(in srgb,var(--acc) 22%,transparent);color:var(--acc2)}
 .ec-r{background:rgba(90,141,184,.2);color:#7aadd4}
 .ec-e{background:rgba(192,80,80,.18);color:#d86060}
@@ -206,31 +223,33 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .lscr::-webkit-scrollbar{width:2px}
 .lscr::-webkit-scrollbar-thumb{background:var(--bg4)}
 .ldh{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);padding:9px 0 4px;border-bottom:1px solid var(--bg3);margin-bottom:4px}
-.lev{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;cursor:pointer;transition:background .11s;margin-bottom:2px}
-.lev:hover{background:var(--bg2)}
+.lev{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;cursor:pointer;transition:all .15s;margin-bottom:2px}
+.lev:hover{background:var(--bg2);transform:translateX(2px)}
 .lev-d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .lev-t{font-size:11.5px;color:var(--txt1);flex:1}
 .lev-n{font-size:9px;color:var(--txt2);margin-left:5px}
 .lev-tm{font-size:9px;color:var(--txt2)}
 
-/* AI CHAT */
+/* ── AI CHAT ── */
 .chat-wrap{display:flex;flex-direction:column;flex:1;overflow:hidden}
 .chat-top{padding:10px 16px;background:var(--bg1);border-bottom:1px solid var(--bg3);display:flex;align-items:center;gap:10px;flex-shrink:0}
-.chat-icon{width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,var(--acc) 15%,transparent);border:1px solid color-mix(in srgb,var(--acc) 25%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-icon{width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,var(--acc) 15%,transparent);border:1px solid color-mix(in srgb,var(--acc) 25%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:pulse-glow 3s infinite}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 0%,transparent)}50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 12%,transparent)}}
 .chat-icon i{font-size:14px;color:var(--acc2)}
 .chat-name{font-family:var(--serif);font-size:14px;color:var(--txt0);font-style:italic}
 .chat-status{font-size:9px;color:var(--acc);display:flex;align-items:center;gap:4px;margin-top:1px}
 .chat-sdot{width:4px;height:4px;border-radius:50%;background:var(--acc);animation:blink 2.5s infinite}
 .chat-chips{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
-.cchip{font-size:9px;padding:4px 10px;border-radius:20px;border:1px solid var(--bg4);color:var(--txt2);cursor:pointer;transition:all .14s;white-space:nowrap}
-.cchip:hover{border-color:var(--acc);color:var(--acc2)}
+.cchip{font-size:9px;padding:4px 10px;border-radius:20px;border:1px solid var(--bg4);color:var(--txt2);cursor:pointer;transition:all .18s;white-space:nowrap}
+.cchip:hover{border-color:var(--acc);color:var(--acc2);transform:translateY(-1px)}
 .msgs{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:13px}
 .msgs::-webkit-scrollbar{width:2px}
 .msgs::-webkit-scrollbar-thumb{background:var(--bg4)}
 .cdiv{display:flex;align-items:center;gap:10px}
 .cdiv-l{flex:1;height:1px;background:var(--bg3)}
 .cdiv-t{font-size:8px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase}
-.mrow{display:flex;gap:9px;max-width:85%}
+.mrow{display:flex;gap:9px;max-width:85%;animation:msgIn .25s cubic-bezier(.4,0,.2,1)}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .mrow.usr{align-self:flex-end;flex-direction:row-reverse}
 .mav{width:27px;height:27px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .mav.ai{background:color-mix(in srgb,var(--acc) 13%,transparent);border:1px solid color-mix(in srgb,var(--acc) 22%,transparent)}
@@ -250,67 +269,68 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .tdots span:nth-child(3){animation-delay:.26s}
 @keyframes td{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
 .chat-bar{padding:10px 14px;background:var(--bg1);border-top:1px solid var(--bg3);display:flex;align-items:flex-end;gap:8px;flex-shrink:0}
-.chat-iw{flex:1;background:var(--bg2);border:1px solid var(--bg3);border-radius:10px;display:flex;align-items:flex-end;transition:border-color .14s;padding:2px}
-.chat-iw:focus-within{border-color:color-mix(in srgb,var(--acc) 45%,transparent)}
+.chat-iw{flex:1;background:var(--bg2);border:1px solid var(--bg3);border-radius:10px;display:flex;align-items:flex-end;transition:all .18s;padding:2px}
+.chat-iw:focus-within{border-color:color-mix(in srgb,var(--acc) 45%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 8%,transparent)}
 .chat-ta{flex:1;background:transparent;border:none;outline:none;padding:7px 10px;font-size:12px;color:var(--txt0);font-family:var(--sans);resize:none;line-height:1.55;max-height:110px;min-height:34px}
 .chat-ta::placeholder{color:var(--txt3)}
-.send{width:32px;height:32px;border-radius:8px;background:var(--acc);border:none;color:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .14s;flex-shrink:0;margin:2px}
-.send:hover{background:var(--acc2);transform:scale(1.04)}
-.send:active{transform:scale(.96)}
+.send{width:32px;height:32px;border-radius:8px;background:var(--acc);border:none;color:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0;margin:2px}
+.send:hover{background:var(--acc2);transform:scale(1.08)}
+.send:active{transform:scale(.94)}
 .send i{font-size:13px}
 
-/* SETTINGS */
+/* ── SETTINGS ── */
 .set-scr{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:13px}
 .set-scr::-webkit-scrollbar{width:3px}
 .set-scr::-webkit-scrollbar-thumb{background:var(--bg4)}
 .prof-card{background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:18px;display:flex;align-items:center;gap:14px}
 .av-wrap{position:relative;flex-shrink:0}
-.av-big{width:66px;height:66px;border-radius:50%;background:var(--bg3);border:2px solid var(--bg4);overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s}
-.av-big:hover{border-color:var(--acc)}
+.av-big{width:66px;height:66px;border-radius:50%;background:var(--bg3);border:2px solid var(--bg4);overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.av-big:hover{border-color:var(--acc);transform:scale(1.05)}
 .av-big img{width:100%;height:100%;object-fit:cover;display:none}
 .av-big i{font-size:26px;color:var(--txt2)}
-.av-badge{position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:var(--acc);border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.av-badge{position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:var(--acc);border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s}
+.av-badge:hover{transform:scale(1.1)}
 .av-badge i{font-size:9px;color:var(--bg)}
 .pname{font-family:var(--serif);font-size:19px;font-style:italic;color:var(--txt0)}
 .pemail{font-size:10px;color:var(--txt2);margin-top:2px}
 .pchan{font-size:10px;color:var(--acc);margin-top:2px}
 .sf{margin-bottom:11px}
 .sf label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px}
-.sf input{width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--txt0);font-family:var(--sans);outline:none;transition:border-color .14s}
-.sf input:focus{border-color:color-mix(in srgb,var(--acc) 50%,transparent)}
+.sf input{width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--txt0);font-family:var(--sans);outline:none;transition:all .18s}
+.sf input:focus{border-color:color-mix(in srgb,var(--acc) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 8%,transparent)}
 .sf input::placeholder{color:var(--txt3)}
 .th-grid{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px}
 .th-opt{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
-.th-sw{width:42px;height:26px;border-radius:5px;border:2px solid transparent;display:flex;overflow:hidden;transition:all .14s}
-.th-sw:hover,.th-sw.on{border-color:var(--acc)}
+.th-sw{width:42px;height:26px;border-radius:5px;border:2px solid transparent;display:flex;overflow:hidden;transition:all .18s}
+.th-sw:hover{transform:scale(1.1)}
+.th-sw.on{border-color:var(--acc);transform:scale(1.05)}
 .th-a{flex:1}.th-b{width:9px}
 .th-nm{font-size:8px;color:var(--txt2)}
-.danger-btn{background:transparent;border:1px solid var(--bg4);color:var(--txt2);padding:7px 13px;border-radius:7px;font-size:10px;font-family:var(--sans);cursor:pointer;transition:all .13s}
-.danger-btn:hover{border-color:var(--red);color:var(--red)}
-
-/* YT INSIGHT */
+.danger-btn{background:transparent;border:1px solid var(--bg4);color:var(--txt2);padding:7px 13px;border-radius:7px;font-size:10px;font-family:var(--sans);cursor:pointer;transition:all .18s}
+.danger-btn:hover{border-color:var(--red);color:var(--red);transform:translateY(-1px)}
 .yt-ins{background:color-mix(in srgb,var(--acc) 7%,transparent);border:1px solid color-mix(in srgb,var(--acc) 20%,transparent);border-radius:8px;padding:12px;font-size:12px;color:var(--txt1);line-height:1.7}
 .yt-ins strong{color:var(--acc2);font-weight:500}
 
-/* MODAL */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100}
-.ov.open{display:flex}
-.mbox{background:var(--bg1);border:1px solid var(--bg3);border-radius:12px;padding:18px;width:305px;max-width:calc(100vw - 28px)}
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(3px)}
+.ov.open{display:flex;animation:fadeIn .2s ease}
+.mbox{background:var(--bg1);border:1px solid var(--bg3);border-radius:12px;padding:18px;width:305px;max-width:calc(100vw - 28px);animation:fadeSlideIn .25s cubic-bezier(.4,0,.2,1)}
 .mbox-t{font-family:var(--serif);font-size:18px;color:var(--txt0);font-style:italic;margin-bottom:14px}
 .mf{margin-bottom:10px}
 .mf label{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px}
-.mf input,.mf select{width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--txt0);font-family:var(--sans);outline:none;transition:border-color .14s}
-.mf input:focus{border-color:color-mix(in srgb,var(--acc) 50%,transparent)}
+.mf input,.mf select{width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--txt0);font-family:var(--sans);outline:none;transition:all .18s}
+.mf input:focus{border-color:color-mix(in srgb,var(--acc) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 8%,transparent)}
 .mf input::placeholder{color:var(--txt3)}
 .mf select option{background:var(--bg2)}
 .tp-row{display:flex;gap:4px;flex-wrap:wrap}
-.tp{font-size:9px;padding:3px 10px;border-radius:20px;border:1px solid var(--bg4);color:var(--txt2);cursor:pointer;transition:all .13s}
+.tp{font-size:9px;padding:3px 10px;border-radius:20px;border:1px solid var(--bg4);color:var(--txt2);cursor:pointer;transition:all .15s}
+.tp:hover{transform:translateY(-1px)}
 .tp.on{border-color:var(--acc);color:var(--acc2);background:color-mix(in srgb,var(--acc) 12%,transparent)}
 .mg2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mfoot{display:flex;gap:7px;justify-content:flex-end;margin-top:14px}
 
-/* TOAST */
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:9px 16px;font-size:11px;color:var(--txt1);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:200;white-space:nowrap;pointer-events:none}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:9px 16px;font-size:11px;color:var(--txt1);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:200;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -321,17 +341,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
   <div class="sb-lbl">Principal</div>
   <div class="ni act" data-p="dash"><i class="ti ti-layout-dashboard"></i><span>Painel</span></div>
   <div class="ni" data-p="tasks"><i class="ti ti-checks"></i><span>Tarefas</span></div>
-  <div class="ni" data-p="recs"><i class="ti ti-video"></i><span>Gravações</span></div>
+  <div class="ni" data-p="recs"><i class="ti ti-video-plus"></i><span>Gravações</span></div>
   <div class="sb-sep"></div>
   <div class="sb-lbl">Ferramentas</div>
-  <div class="ni" data-p="cal"><i class="ti ti-calendar"></i><span>Calendário</span></div>
-  <div class="ni" data-p="ai"><i class="ti ti-sparkles"></i><span>Assistente IA</span></div>
+  <div class="ni" data-p="cal"><i class="ti ti-calendar-event"></i><span>Calendário</span></div>
+  <div class="ni" data-p="ai"><i class="ti ti-message-bolt"></i><span>Assistente IA</span></div>
   <div class="ni" data-p="yt"><i class="ti ti-brand-youtube"></i><span>YouTube Studio</span></div>
   <div class="sb-sep"></div>
   <div class="sb-btm">
-    <div class="ni" data-p="settings"><i class="ti ti-settings"></i><span>Configurações</span></div>
+    <div class="ni" data-p="settings"><i class="ti ti-adjustments-horizontal"></i><span>Configurações</span></div>
     <div class="av-sb" onclick="go('settings')">
-      <i class="ti ti-user" id="sb-ic"></i>
+      <i class="ti ti-user-circle" id="sb-ic"></i>
       <img id="sb-img" alt="">
       <span class="avname" id="sb-name">Minha conta</span>
     </div>
@@ -340,11 +360,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 
 <div class="main">
   <header class="topbar">
-    <div class="tb-toggle" onclick="toggleSb()"><i class="ti ti-menu-2"></i></div>
+    <div class="tb-tog" onclick="toggleSb()"><i class="ti ti-layout-sidebar"></i></div>
     <h1 class="pg-title" id="pg-title">Painel</h1>
     <div class="tb-right">
       <div class="sync"><div class="sdot"></div><span>Sincronizado</span></div>
-      <div class="ib"><i class="ti ti-bell"></i></div>
+      <div class="ib" title="Notificações"><i class="ti ti-bell-ringing"></i></div>
     </div>
   </header>
 
@@ -363,12 +383,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
       </div>
       <div class="card" style="background:var(--bg2)">
         <div class="card-h"><span class="card-lbl">Assistente IA</span><span class="card-lnk" onclick="go('ai')">abrir chat →</span></div>
-        <p style="font-size:12px;color:var(--txt1);line-height:1.7;margin-bottom:10px">Bem-vindo ao <strong style="color:var(--acc2)">Creator Hub</strong>. Adicione tarefas e gravações para eu te dar dicas personalizadas.</p>
+        <p style="font-size:12px;color:var(--txt1);line-height:1.7;margin-bottom:10px">Bem-vindo ao <strong style="color:var(--acc2)">Creator Hub</strong>. Use o assistente para ideias de pauta, dicas de roteiro e estratégias de crescimento.</p>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <span class="cchip" onclick="go('ai');setTimeout(()=>ask('Me dê 5 ideias de pauta para YouTube'),250)">💡 Ideias de pauta</span>
-          <span class="cchip" onclick="go('ai');setTimeout(()=>ask('Como aumentar a retenção nos meus vídeos?'),250)">📈 Retenção</span>
-          <span class="cchip" onclick="go('ai');setTimeout(()=>ask('Dicas de roteiro para YouTube'),250)">🎙 Roteiro</span>
-          <span class="cchip" onclick="go('ai');setTimeout(()=>ask('Como criar thumbnails que convertem?'),250)">🖼 Thumbnails</span>
+          <span class="cchip" onclick="go('ai');setTimeout(()=>ask('ideias de pauta'),200)">💡 Ideias de pauta</span>
+          <span class="cchip" onclick="go('ai');setTimeout(()=>ask('aumentar retenção'),200)">📈 Retenção</span>
+          <span class="cchip" onclick="go('ai');setTimeout(()=>ask('roteiro'),200)">🎙 Roteiro</span>
+          <span class="cchip" onclick="go('ai');setTimeout(()=>ask('thumbnails'),200)">🖼 Thumbnails</span>
         </div>
       </div>
       <div class="card">
@@ -389,10 +409,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
         <div class="frow">
           <input class="fin" id="t-inp" placeholder="Nova tarefa..." style="flex:1;min-width:120px">
           <select class="fin" id="t-cat" style="max-width:115px">
-            <option value="s">Roteiro</option><option value="f">Gravação</option>
-            <option value="e">Edição</option><option value="p">Publicação</option>
+            <option value="s">Roteiro</option>
+            <option value="f">Gravação</option>
+            <option value="e">Edição</option>
+            <option value="p">Publicação</option>
           </select>
-          <input class="fin" id="t-dt" type="date" style="max-width:135px">
+          <input class="fin" id="t-dt" type="date" title="Data-prazo" style="max-width:140px">
           <button class="btn-a" onclick="addTask()"><i class="ti ti-plus"></i>Adicionar</button>
         </div>
         <div id="task-list"></div>
@@ -408,8 +430,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
           <input class="fin" id="r-inp" placeholder="Nome da gravação..." style="flex:1;min-width:120px">
           <input class="fin" id="r-dur" placeholder="Duração ex: 15 min" style="max-width:130px">
           <select class="fin" id="r-st" style="max-width:110px">
-            <option value="raw">Bruto</option><option value="rec">Gravando</option>
-            <option value="edt">Editando</option><option value="pub">Publicado</option>
+            <option value="raw">Bruto</option>
+            <option value="rec">Gravando</option>
+            <option value="edt">Editando</option>
+            <option value="pub">Publicado</option>
           </select>
           <button class="btn-a" onclick="addRec()"><i class="ti ti-plus"></i>Adicionar</button>
         </div>
@@ -466,10 +490,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
           <div class="chat-status"><div class="chat-sdot"></div>online</div>
         </div>
         <div class="chat-chips">
-          <span class="cchip" onclick="ask('Me dê 5 ideias de pauta para YouTube')">💡 Pauta</span>
-          <span class="cchip" onclick="ask('Como melhorar a retenção dos meus vídeos?')">📈 Retenção</span>
-          <span class="cchip" onclick="ask('Dicas de roteiro para YouTube')">🎙 Roteiro</span>
-          <span class="cchip" onclick="ask('Como criar thumbnails que convertem?')">🖼 Thumbnail</span>
+          <span class="cchip" onclick="ask('ideias de pauta')">💡 Pauta</span>
+          <span class="cchip" onclick="ask('aumentar retenção')">📈 Retenção</span>
+          <span class="cchip" onclick="ask('roteiro')">🎙 Roteiro</span>
+          <span class="cchip" onclick="ask('thumbnails')">🖼 Thumbnail</span>
+          <span class="cchip" onclick="ask('crescer canal')">🚀 Crescer</span>
         </div>
       </div>
       <div class="msgs" id="msgs">
@@ -477,7 +502,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
         <div class="mrow">
           <div class="mav ai"><i class="ti ti-sparkles"></i></div>
           <div>
-            <div class="bbl ai">Olá! Sou o <strong>Studio AI</strong>. Pode me perguntar sobre pautas, roteiro, thumbnails, crescimento de canal — qualquer coisa do seu YouTube.</div>
+            <div class="bbl ai">Olá! Sou o <strong>Studio AI</strong>. Pode me perguntar sobre pautas, roteiro, thumbnails, crescimento de canal — qualquer coisa do seu YouTube. Como posso te ajudar hoje?</div>
             <div class="mtime" id="init-t"></div>
           </div>
         </div>
@@ -488,7 +513,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submit()}"
             oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
         </div>
-        <button class="send" onclick="submit()"><i class="ti ti-send"></i></button>
+        <button class="send" onclick="submit()"><i class="ti ti-send-2"></i></button>
       </div>
     </div>
   </section>
@@ -505,7 +530,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
         <div class="met"><div class="mval">2.1k</div><div class="mlbl">Impressões</div><div class="mchg dn">↓ 2%</div><div class="mbar"><div class="mfill" style="width:30%;background:var(--red)"></div></div></div>
       </div>
       <div class="card">
-        <div class="card-h"><span class="card-lbl">Análise IA</span><span class="card-lnk" onclick="go('ai');setTimeout(()=>ask('Analise: 4820 views +18%, 312 inscritos +7%, CTR 8.4%, tempo médio 6:42 caiu 4%. O que priorizar?'),250)">aprofundar →</span></div>
+        <div class="card-h"><span class="card-lbl">Análise IA</span><span class="card-lnk" onclick="go('ai');setTimeout(()=>ask('analisar canal'),250)">aprofundar →</span></div>
         <div class="yt-ins">Seu <strong>CTR de 8.4%</strong> está muito acima da média do YouTube (2–5%) — suas thumbnails estão funcionando. O ponto de atenção é o <strong>tempo médio assistido</strong>, que caiu 4%. Considere adicionar capítulos e revisar o ritmo de edição após os 8 minutos.</div>
       </div>
       <div class="card">
@@ -522,7 +547,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
       <div class="prof-card">
         <div class="av-wrap">
           <div class="av-big" onclick="document.getElementById('av-file').click()">
-            <i class="ti ti-user" id="av-ic"></i><img id="av-img" alt="">
+            <i class="ti ti-user-circle" id="av-ic"></i><img id="av-img" alt="">
           </div>
           <div class="av-badge" onclick="document.getElementById('av-file').click()"><i class="ti ti-camera"></i></div>
           <input type="file" id="av-file" accept="image/*" style="display:none">
@@ -542,19 +567,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
         <div style="margin-top:12px"><button class="btn-a" onclick="saveProfile()"><i class="ti ti-check"></i>Salvar perfil</button></div>
       </div>
       <div class="card">
-        <div class="card-h"><span class="card-lbl">Chave do OpenRouter (IA gratuita)</span></div>
-        <p style="font-size:11px;color:var(--txt2);line-height:1.6;margin-bottom:10px">Cole aqui sua chave do OpenRouter (openrouter.ai). É grátis, sem cartão. A chave fica salva só no seu dispositivo.</p>
-        <div class="sf" style="margin-bottom:0"><label>API Key</label><input id="s-key" type="password" placeholder="Cole sua chave aqui..."></div>
-        <div style="margin-top:12px"><button class="btn-a" onclick="saveKey()"><i class="ti ti-check"></i>Salvar chave</button></div>
-      </div>
-      <div class="card">
         <div class="card-h"><span class="card-lbl">Aparência</span></div>
         <div class="th-grid" id="th-grid"></div>
       </div>
       <div class="card">
         <div class="card-h"><span class="card-lbl">Dados</span></div>
         <p style="font-size:11.5px;color:var(--txt2);line-height:1.65;margin-bottom:12px">Tarefas, gravações e eventos ficam salvos neste dispositivo.</p>
-        <button class="danger-btn" onclick="clearData()">Limpar todos os dados</button>
+        <button class="danger-btn" onclick="clearData()"><i class="ti ti-trash" style="font-size:12px;margin-right:5px"></i>Limpar todos os dados</button>
       </div>
     </div>
   </section>
@@ -589,19 +608,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 <div class="toast" id="toast"></div>
 
 <script>
-// ── CHAVE GEMINI ──────────────────────────────────────────────────────
-// Você pode colocar sua chave diretamente aqui OU salvar pelo app em Configurações
-const GEMINI_KEY_DEFAULT = '';
-// ─────────────────────────────────────────────────────────────────────
-
+// ── TEMAS ──
 const THEMES=[
-  {id:'',name:'Obsidian',a:'#0f0f10',b:'#c8a96e'},
-  {id:'linen',name:'Linen',a:'#f5f2ee',b:'#7a5c3a'},
-  {id:'slate',name:'Slate',a:'#0a0e14',b:'#5b8db8'},
-  {id:'moss',name:'Moss',a:'#0a100c',b:'#6aaa74'},
-  {id:'rose',name:'Rose',a:'#100c0e',b:'#c46a7e'},
-  {id:'aurum',name:'Aurum',a:'#0d0c08',b:'#d4af37'},
-  {id:'noir',name:'Noir',a:'#080808',b:'#e0e0e0'},
+  {id:'',n:'Obsidian',a:'#0f0f10',b:'#c8a96e'},
+  {id:'linen',n:'Linen',a:'#f5f2ee',b:'#7a5c3a'},
+  {id:'slate',n:'Slate',a:'#0a0e14',b:'#5b8db8'},
+  {id:'moss',n:'Moss',a:'#0a100c',b:'#6aaa74'},
+  {id:'rose',n:'Rose',a:'#100c0e',b:'#c46a7e'},
+  {id:'aurum',n:'Aurum',a:'#0d0c08',b:'#d4af37'},
+  {id:'noir',n:'Noir',a:'#080808',b:'#e0e0e0'},
 ];
 const PAGES={dash:'Painel',tasks:'Tarefas',recs:'Gravações',cal:'Calendário',ai:'Assistente IA',yt:'YouTube Studio',settings:'Configurações'};
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -613,19 +628,28 @@ const TCATS={s:{l:'Roteiro',c:'tt-s'},f:{l:'Gravação',c:'tt-f'},e:{l:'Edição
 const RSTATS={raw:{l:'Bruto',c:'s-raw',p:10},rec:{l:'Gravando',c:'s-rec',p:40},edt:{l:'Editando',c:'s-edt',p:70},pub:{l:'Publicado',c:'s-pub',p:100}};
 
 function pad(n){return String(n).padStart(2,'0')}
-function dk(y,m,d){return`${y}-${pad(m+1)}-${pad(d)}`}
+function dk(y,m,d){return y+'-'+pad(m+1)+'-'+pad(d)}
 function tdKey(){const t=new Date();return dk(t.getFullYear(),t.getMonth(),t.getDate())}
-function tnow(){const d=new Date();return`${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function tnow(){const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
 
-// Theme
 let curTheme=localStorage.getItem('ch_th')||'';
-function applyTheme(id){if(id)document.body.setAttribute('data-theme',id);else document.body.removeAttribute('data-theme');curTheme=id;localStorage.setItem('ch_th',id);document.querySelectorAll('.th-sw').forEach(e=>e.classList.toggle('on',e.dataset.id===id))}
+function applyTheme(id){
+  if(id)document.body.setAttribute('data-theme',id);
+  else document.body.removeAttribute('data-theme');
+  curTheme=id;localStorage.setItem('ch_th',id);
+  document.querySelectorAll('.th-sw').forEach(e=>e.classList.toggle('on',e.dataset.id===id));
+}
 const thg=document.getElementById('th-grid');
-THEMES.forEach(t=>{const o=document.createElement('div');o.className='th-opt';o.innerHTML=`<div class="th-sw${t.id===curTheme?' on':''}" data-id="${t.id}"><div class="th-a" style="background:${t.a}"></div><div class="th-b" style="background:${t.b}"></div></div><div class="th-nm">${t.name}</div>`;o.querySelector('.th-sw').onclick=()=>applyTheme(t.id);thg.appendChild(o)});
+THEMES.forEach(t=>{
+  const o=document.createElement('div');o.className='th-opt';
+  o.innerHTML='<div class="th-sw'+(t.id===curTheme?' on':'')+'" data-id="'+t.id+'"><div class="th-a" style="background:'+t.a+'"></div><div class="th-b" style="background:'+t.b+'"></div></div><div class="th-nm">'+t.n+'</div>';
+  o.querySelector('.th-sw').onclick=()=>applyTheme(t.id);
+  thg.appendChild(o);
+});
 applyTheme(curTheme);
 
-// Navigation
+// ── NAVEGAÇÃO ──
 function go(p){
   document.querySelectorAll('.pg').forEach(e=>e.classList.remove('act'));
   document.querySelectorAll('.ni[data-p]').forEach(e=>e.classList.toggle('act',e.dataset.p===p));
@@ -635,30 +659,46 @@ function go(p){
   if(p==='recs')renderRecs();
   if(p==='cal')renderCal();
   if(p==='dash'){renderDTasks();renderDRecs()}
-  if(p==='settings')loadSettingsKey();
 }
 document.querySelectorAll('.ni[data-p]').forEach(e=>e.onclick=()=>go(e.dataset.p));
-
 function toggleSb(){document.getElementById('sb').classList.toggle('open')}
 
-// Data
+// ── DADOS ──
 let tasks=JSON.parse(localStorage.getItem('ch_tasks')||'[]');
 let recs=JSON.parse(localStorage.getItem('ch_recs')||'[]');
 let events=JSON.parse(localStorage.getItem('ch_evs')||'[]');
-
 function saveTasks(){localStorage.setItem('ch_tasks',JSON.stringify(tasks))}
 function saveRecs(){localStorage.setItem('ch_recs',JSON.stringify(recs))}
 function saveEvs(){localStorage.setItem('ch_evs',JSON.stringify(events))}
 
-// Tasks
+// ── PRAZO ──
+function dateLabel(dateStr){
+  if(!dateStr)return null;
+  const today=new Date();today.setHours(0,0,0,0);
+  const d=new Date(dateStr+'T00:00:00');
+  const diff=Math.round((d-today)/(1000*60*60*24));
+  if(diff<0)return{txt:'Atrasado '+Math.abs(diff)+'d',cls:'overdue'};
+  if(diff===0)return{txt:'Hoje',cls:'soon'};
+  if(diff===1)return{txt:'Amanhã',cls:'soon'};
+  if(diff<=7)return{txt:'Em '+diff+'d',cls:''};
+  return{txt:pad(d.getDate())+'/'+pad(d.getMonth()+1),cls:''};
+}
+
+// ── TAREFAS ──
 function renderTaskRows(el,list,mini){
-  if(!list.length){el.innerHTML=`<div class="empty"><i class="ti ti-checks"></i>${mini?'Tudo em dia!':'Adicione sua primeira tarefa acima.'}</div>`;return}
+  if(!list.length){el.innerHTML='<div class="empty"><i class="ti ti-clipboard-list"></i>'+(mini?'Tudo em dia!':'Adicione sua primeira tarefa acima.')+'</div>';return}
   el.innerHTML='';
   list.forEach(task=>{
     const idx=tasks.indexOf(task);
     const cat=TCATS[task.cat]||TCATS.s;
+    const dl=dateLabel(task.date);
     const d=document.createElement('div');d.className='trow';
-    d.innerHTML=`<div class="tck${task.done?' on':''}"></div><span class="tlbl${task.done?' done':''}">${task.name}</span>${!mini?`<span class="ttag ${cat.c}">${cat.l}</span>`:''}${task.date&&!mini?`<span style="font-size:9px;color:var(--txt2)">${task.date}</span>`:''}<button class="xb"><i class="ti ti-x"></i></button>`;
+    d.innerHTML='<div class="tck'+(task.done?' on':'')+'"></div>'
+      +'<span class="tlbl'+(task.done?' done':'')+'">'+task.name+'</span>'
+      +(!mini?'<span class="ttag '+cat.c+'">'+cat.l+'</span>':'')
+      +(dl&&!mini?'<span class="tdate '+dl.cls+'">'+dl.txt+'</span>':'')
+      +(dl&&mini&&dl.cls==='overdue'?'<span class="tdate overdue">'+dl.txt+'</span>':'')
+      +'<button class="xb"><i class="ti ti-x"></i></button>';
     d.querySelector('.tck').onclick=()=>{tasks[idx].done=!tasks[idx].done;saveTasks();renderTaskRows(el,list,mini)};
     d.querySelector('.xb').onclick=()=>{tasks.splice(idx,1);saveTasks();if(mini)renderDTasks();else renderTasks();renderDTasks()};
     el.appendChild(d);
@@ -675,15 +715,18 @@ function addTask(){
 }
 document.getElementById('t-inp').onkeydown=e=>{if(e.key==='Enter')addTask()};
 
-// Recs
+// ── GRAVAÇÕES ──
 function renderRecRows(el,list){
-  if(!list.length){el.innerHTML=`<div class="empty"><i class="ti ti-video"></i>Nenhuma gravação ainda.</div>`;return}
+  if(!list.length){el.innerHTML='<div class="empty"><i class="ti ti-video-off"></i>Nenhuma gravação ainda.</div>';return}
   el.innerHTML='';
   list.forEach(rec=>{
     const idx=recs.indexOf(rec);
     const st=RSTATS[rec.st]||RSTATS.raw;
     const d=document.createElement('div');d.className='rrow';
-    d.innerHTML=`<div class="rthumb"><i class="ti ti-player-record"></i><div class="rprog" style="width:${st.p}%"></div></div><div style="flex:1"><div class="rname">${rec.name}</div><div class="rmeta">${rec.dur||'–'}</div></div><div class="stag ${st.c}">${st.l}</div><button class="xb"><i class="ti ti-x"></i></button>`;
+    d.innerHTML='<div class="rthumb"><i class="ti ti-player-record"></i><div class="rprog" style="width:'+st.p+'%"></div></div>'
+      +'<div style="flex:1"><div class="rname">'+rec.name+'</div><div class="rmeta">'+(rec.dur||'–')+'</div></div>'
+      +'<div class="stag '+st.c+'">'+st.l+'</div>'
+      +'<button class="xb" style="opacity:1"><i class="ti ti-x"></i></button>';
     d.querySelector('.xb').onclick=()=>{recs.splice(idx,1);saveRecs();renderRecs();renderDRecs()};
     el.appendChild(d);
   });
@@ -699,71 +742,67 @@ function addRec(){
 }
 document.getElementById('r-inp').onkeydown=e=>{if(e.key==='Enter')addRec()};
 
-// Calendar
+// ── CALENDÁRIO ──
 let cY=new Date().getFullYear(),cM=new Date().getMonth(),cV='month',cF='all',selD=tdKey(),selEvT='task';
 function evForDate(k){return events.filter(e=>e.date===k&&(cF==='all'||e.type===cF))}
-
 function renderMiniCal(){
-  const g=document.getElementById('mn-grid');
-  const l=document.getElementById('mn-lbl');
+  const g=document.getElementById('mn-grid'),l=document.getElementById('mn-lbl');
   if(!g||!l)return;
-  l.textContent=`${MONTHS[cM].substring(0,3)} ${cY}`;
+  l.textContent=MONTHS[cM].substring(0,3)+' '+cY;
   g.innerHTML='';
   DOWS.forEach(d=>{const e=document.createElement('div');e.className='mn-dow';e.textContent=d[0];g.appendChild(e)});
-  const first=new Date(cY,cM,1).getDay();
-  const days=new Date(cY,cM+1,0).getDate();
-  const prev=new Date(cY,cM,0).getDate();
+  const first=new Date(cY,cM,1).getDay(),days=new Date(cY,cM+1,0).getDate(),prev=new Date(cY,cM,0).getDate();
   for(let i=0;i<first;i++){const e=document.createElement('div');e.className='mn-d om';e.textContent=prev-first+1+i;g.appendChild(e)}
   for(let d=1;d<=days;d++){
-    const k=dk(cY,cM,d);
-    let c='mn-d';
-    if(k===tdKey())c+=' td';
-    else if(k===selD)c+=' sel';
+    const k=dk(cY,cM,d);let c='mn-d';
+    if(k===tdKey())c+=' td';else if(k===selD)c+=' sel';
     if(events.some(e=>e.date===k))c+=' hev';
     const e=document.createElement('div');e.className=c;e.textContent=d;
-    e.onclick=()=>{selD=k;renderCal()};
-    g.appendChild(e);
+    e.onclick=()=>{selD=k;renderCal()};g.appendChild(e);
   }
   const rem=(7-((first+days)%7))%7;
   for(let i=1;i<=rem;i++){const e=document.createElement('div');e.className='mn-d om';e.textContent=i;g.appendChild(e)}
 }
-
 function renderMonthV(){
-  const first=new Date(cY,cM,1).getDay();
-  const days=new Date(cY,cM+1,0).getDate();
-  const prev=new Date(cY,cM,0).getDate();
+  const first=new Date(cY,cM,1).getDay(),days=new Date(cY,cM+1,0).getDate(),prev=new Date(cY,cM,0).getDate();
   const cell=(n,k,om)=>{
-    const evs=evForDate(k);
-    const iT=k===tdKey(),iS=k===selD;
-    return`<div class="dc${om?' om':''}${iT?' tc':''}${iS?' sc':''}" onclick="selD='${k}';renderCal()"><div class="dn${iT?' tn':''}">${n}</div>${evs.slice(0,3).map(e=>`<div class="ec ${EV_CLS[e.type]||'ec-t'}">${e.time?e.time.substring(0,5)+' ':''}${e.title}</div>`).join('')}${evs.length>3?`<div style="font-size:7px;color:var(--txt2);padding:1px 3px">+${evs.length-3}</div>`:''}</div>`;
+    const evs=evForDate(k),iT=k===tdKey(),iS=k===selD;
+    return '<div class="dc'+(om?' om':'')+(iT?' tc':'')+(iS?' sc':'')+'" onclick="selD=\''+k+'\';renderCal()">'
+      +'<div class="dn'+(iT?' tn':'')+'">'+n+'</div>'
+      +evs.slice(0,3).map(e=>'<div class="ec '+(EV_CLS[e.type]||'ec-t')+'">'+(e.time?e.time.substring(0,5)+' ':'')+e.title+'</div>').join('')
+      +(evs.length>3?'<div style="font-size:7px;color:var(--txt2);padding:1px 3px">+'+( evs.length-3)+'</div>':'')
+      +'</div>';
   };
-  let h=`<div class="dow-hdr">${DOWS.map(d=>`<div class="dow-c">${d}</div>`).join('')}</div><div class="mgrid">`;
+  let h='<div class="dow-hdr">'+DOWS.map(d=>'<div class="dow-c">'+d+'</div>').join('')+'</div><div class="mgrid">';
   for(let i=0;i<first;i++)h+=cell(prev-first+1+i,dk(cY,cM-1,prev-first+1+i),true);
   for(let d=1;d<=days;d++)h+=cell(d,dk(cY,cM,d),false);
   const rem=(7-((first+days)%7))%7;
   for(let i=1;i<=rem;i++)h+=cell(i,dk(cY,cM+1,i),true);
   return h+'</div>';
 }
-
 function renderListV(){
   const sorted=events.filter(e=>cF==='all'||e.type===cF).sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
-  if(!sorted.length)return`<div class="empty" style="margin-top:16px"><i class="ti ti-calendar-off"></i>Nenhum evento. Clique em "Evento" para adicionar.</div>`;
+  if(!sorted.length)return'<div class="empty" style="margin-top:16px"><i class="ti ti-calendar-off"></i>Nenhum evento. Clique em "Evento" para adicionar.</div>';
   let h='<div class="lscr">',last='';
   sorted.forEach(ev=>{
-    if(ev.date!==last){const[y,m,d]=ev.date.split('-').map(Number);const dt=new Date(y,m-1,d);h+=`<div class="ldh">${ev.date===tdKey()?'Hoje — ':''}${DOWS_F[dt.getDay()]}, ${d} de ${MONTHS[m-1]}</div>`;last=ev.date}
-    h+=`<div class="lev"><div class="lev-d" style="background:${EV_DOT[ev.type]||'#e2c98a'}"></div><span class="lev-t">${ev.title}${ev.note?`<span class="lev-n">· ${ev.note}</span>`:''}</span><span class="lev-tm">${ev.time||''}</span><button class="xb" onclick="delEv('${ev.id}')"><i class="ti ti-trash" style="font-size:11px"></i></button></div>`;
+    if(ev.date!==last){
+      const[y,m,d]=ev.date.split('-').map(Number);const dt=new Date(y,m-1,d);
+      h+='<div class="ldh">'+(ev.date===tdKey()?'Hoje — ':'')+DOWS_F[dt.getDay()]+', '+d+' de '+MONTHS[m-1]+'</div>';last=ev.date;
+    }
+    h+='<div class="lev"><div class="lev-d" style="background:'+(EV_DOT[ev.type]||'#e2c98a')+'"></div>'
+      +'<span class="lev-t">'+ev.title+(ev.note?'<span class="lev-n">· '+ev.note+'</span>':'')+'</span>'
+      +'<span class="lev-tm">'+(ev.time||'')+'</span>'
+      +'<button class="xb" style="opacity:1" onclick="delEv(\''+ev.id+'\')"><i class="ti ti-trash" style="font-size:11px"></i></button></div>';
   });
   return h+'</div>';
 }
-
 function renderCal(){
   renderMiniCal();
   const t=document.getElementById('cal-title');
-  if(t)t.textContent=cV==='list'?'Todos os eventos':`${MONTHS[cM]} ${cY}`;
+  if(t)t.textContent=cV==='list'?'Todos os eventos':MONTHS[cM]+' '+cY;
   const v=document.getElementById('cal-view');
   if(v)v.innerHTML=cV==='month'?renderMonthV():renderListV();
 }
-
 document.getElementById('c-p').onclick=()=>{cM--;if(cM<0){cM=11;cY--}renderCal()};
 document.getElementById('c-n').onclick=()=>{cM++;if(cM>11){cM=0;cY++}renderCal()};
 document.getElementById('c-t').onclick=()=>{cY=new Date().getFullYear();cM=new Date().getMonth();selD=tdKey();renderCal()};
@@ -771,7 +810,6 @@ document.getElementById('mn-p').onclick=()=>{cM--;if(cM<0){cM=11;cY--}renderCal(
 document.getElementById('mn-n').onclick=()=>{cM++;if(cM>11){cM=0;cY++}renderCal()};
 document.querySelectorAll('.vb').forEach(e=>e.onclick=()=>{cV=e.dataset.v;document.querySelectorAll('.vb').forEach(x=>x.classList.toggle('on',x===e));renderCal()});
 document.querySelectorAll('#filters .fi').forEach(e=>e.onclick=()=>{cF=e.dataset.f;document.querySelectorAll('#filters .fi').forEach(x=>x.classList.toggle('on',x===e));renderCal()});
-
 document.getElementById('nev-btn').onclick=()=>{
   document.getElementById('ev-t').value='';document.getElementById('ev-n').value='';
   document.getElementById('ev-d').value=selD;document.getElementById('ev-h').value='10:00';
@@ -790,7 +828,50 @@ function saveEv(){
 function delEv(id){events=events.filter(e=>e.id!==id);saveEvs();renderCal()}
 document.getElementById('ev-t').onkeydown=e=>{if(e.key==='Enter')saveEv()};
 
-// AI Chat
+// ── IA (respostas inteligentes offline) ──
+const AI_KB = {
+  crescer:[
+    'Para crescer no YouTube do zero, foque em **consistência antes de perfeição**. Poste 1 vídeo por semana no mesmo dia, mesmo que curto. O algoritmo recompensa quem publica com regularidade.\n\nEscolha um **nicho específico** e fique nele nos primeiros 50 vídeos. Canais generalistas demoram muito mais para crescer porque o YouTube não sabe para quem recomendar seu conteúdo.\n\nUse os **primeiros 30 segundos** para prender o espectador — apresente o problema que você vai resolver antes de qualquer introdução. Isso sozinho pode dobrar sua retenção.',
+    'O crescimento no YouTube depende de três pilares: **clique, assistência e retorno**. Uma boa thumbnail garante o clique, um bom roteiro garante que assistam até o fim, e conteúdo de qualidade faz as pessoas voltarem.\n\nNos primeiros meses, analise seus 3 vídeos com melhor desempenho e *faça mais do mesmo*. O YouTube já está te dizendo o que funciona para o seu público.\n\nColabore com outros criadores do mesmo tamanho — isso expõe você a audiências novas sem custo.',
+  ],
+  pauta:[
+    'Cinco ideias de pauta que funcionam muito bem: **1) "Eu tentei X por 30 dias"** — formato de desafio tem altíssimo CTR. **2) "O erro que quase acabou com meu canal"** — vulnerabilidade gera conexão. **3) Reagir a um vídeo viral do seu nicho** — aproveita o tráfego existente. **4) "Guia completo para iniciantes em [seu tema]"** — vídeos evergreen geram views por anos. **5) Bastidores do seu processo** — humaniza o canal e fideliza.',
+    'Para gerar pautas infinitas: toda semana anote **3 perguntas que você mesmo tinha** quando começou no seu nicho. Essas são as melhores pautas — você já sabe exatamente como explicar porque já esteve no lugar do espectador.\n\nOutra estratégia: vá no YouTube, pesquise seu tema e olhe a aba *"Comentários"* dos vídeos mais populares. As perguntas que as pessoas fazem nos comentários são pautas prontas esperando por você.\n\nUse o Google Trends para identificar assuntos em alta no seu nicho antes que todos façam.',
+  ],
+  retencao:[
+    'A retenção começa antes do vídeo: um **título e thumbnail alinhados** com o conteúdo evitam que pessoas cliquem esperando X e saiam ao ver Y — isso derruba a retenção logo no início.\n\nDentro do vídeo, use a técnica do **"loop aberto"**: no começo, prometa algo que você vai revelar no final. "E no final desse vídeo eu vou te mostrar o erro que 90% dos criadores cometem." Isso cria tensão que mantém o espectador assistindo.\n\nCorte impiedosamente tudo que não serve à mensagem principal. *Cada segundo de conteúdo irrelevante é uma saída em potencial.*',
+    'Três técnicas práticas para retenção: **1) Edição em ritmo** — troque de ângulo ou adicione b-roll a cada 20-30 segundos para estimular o cérebro visualmente. **2) Micro-ganchos** — a cada 2-3 minutos diga algo como "daqui a pouco vou te mostrar...". **3) Capítulos** — adicione timestamps no título para que o espectador não abandone por não saber se o que quer está no vídeo.\n\nAnalise no YouTube Studio exatamente onde as pessoas saem e corrija esse ponto nos próximos vídeos.',
+  ],
+  roteiro:[
+    'O roteiro ideal para YouTube segue a estrutura **AIDA**: *Atenção* (primeiros 5 segundos — problema ou afirmação forte), *Interesse* (por que isso importa para o espectador), *Desejo* (mostre o resultado que eles terão) e *Ação* (o que fazer ao final).\n\nEscreva o roteiro **falando em voz alta** enquanto digita — isso elimina automaticamente frases que soam artificiais. Se você tropeçar ao falar, o espectador também vai tropeçar ao ouvir.\n\nMantenha parágrafos curtos e use **linguagem conversacional**. "Você já percebeu que..." funciona melhor que "Neste vídeo abordaremos..."',
+    'Para roteiros mais dinâmicos: comece com a **conclusão**. Escreva o que você quer que o espectador saiba ao final, depois construa o caminho reverso até o início. Isso elimina conteúdo irrelevante automaticamente.\n\nUse a regra dos **3 pontos**: toda seção do seu vídeo deve ter no máximo 3 pontos principais. Mais que isso e o espectador para de absorver.\n\n*Grave uma versão de rascunho* sem editar, assista na velocidade 1.5x e anote onde você se entedia — esses são os cortes obrigatórios.',
+  ],
+  thumbnail:[
+    'Uma boa thumbnail precisa funcionar em **tamanho miniatura** — 80% das pessoas escolhem no celular. Teste olhando a thumbnail com 5cm de largura antes de publicar.\n\nOs elementos que mais convertem: **rosto com emoção exagerada** (espanto, alegria, preocupação), **texto com no máximo 4 palavras** em fonte grossa, e **contraste alto** entre o fundo e o elemento principal. Evite fundo branco — some no YouTube.\n\nCrie **3 versões diferentes** da mesma thumbnail e no YouTube Studio você pode testar qual performa melhor com sua audiência.',
+    'Cinco erros que derrubam o CTR da thumbnail: **1) Texto pequeno demais** — se não dá pra ler em 2 segundos, corta. **2) Muito elemento** — escolha UM foco. **3) Cor parecida com a do vídeo ao lado** — varie sempre. **4) Não ter rosto humano** — rostos aumentam CTR em média 38%. **5) Título e thumbnail dizendo a mesma coisa** — um deve complementar o outro, não repetir.\n\nUse o *Canva* gratuitamente com templates de YouTube — pesquise "YouTube thumbnail" lá e adapte.',
+  ],
+  analisar:[
+    'Analisando os dados do seu canal: seu **CTR acima de 8%** é excelente — a média do YouTube é 2-5%. Isso significa que suas thumbnails e títulos estão chamando atenção.\n\nO ponto crítico é o **tempo médio assistido** que caiu. Isso geralmente indica que a abertura do vídeo está boa mas o meio está perdendo as pessoas. Analise no YouTube Studio exatamente em qual minuto há a maior queda e trabalhe esse trecho.\n\nCom **312 inscritos novos** em 28 dias você está num ritmo saudável para um canal em crescimento. Foque em manter a consistência de publicação.',
+  ],
+  default:[
+    'Ótima pergunta! Para canais em crescimento, o mais importante é entender que o YouTube é um **jogo de longo prazo**. Os primeiros 100 vídeos são de aprendizado — cada um te ensina algo sobre sua audiência.\n\nFoque em melhorar **uma coisa por vez**: um mês você trabalha thumbnail, no outro você melhora a abertura dos vídeos, no outro você afina o roteiro. Quem tenta melhorar tudo de uma vez acaba não melhorando nada.\n\nE o mais importante: **estude seus próprios dados**. O YouTube Studio te diz exatamente o que funciona para a SUA audiência — é mais valioso que qualquer conselho geral.',
+    'Criar conteúdo de qualidade consistente é a base de tudo. Mas lembre: **qualidade percebida** pelo espectador é diferente de qualidade técnica. Um vídeo com boa iluminação e boa câmera mas conteúdo fraco perde para um vídeo gravado no celular com informação genuinamente útil.\n\nPergunte-se sempre: *"O espectador vai sair desse vídeo com algo que não sabia antes?"* Se a resposta for sim, você tem conteúdo de valor.\n\nDocumente sua jornada — canais que mostram evolução e autenticidade constroem comunidades muito mais leais.',
+  ]
+};
+
+function getAIResponse(msg){
+  const m=msg.toLowerCase();
+  let key='default';
+  if(m.includes('crescer')||m.includes('crescimento')||m.includes('canal')||m.includes('começ')||m.includes('dica'))key='crescer';
+  if(m.includes('pauta')||m.includes('ideia')||m.includes('assunto')||m.includes('tema'))key='pauta';
+  if(m.includes('reten')||m.includes('assistido')||m.includes('sai')||m.includes('abandona'))key='retencao';
+  if(m.includes('roteiro')||m.includes('script')||m.includes('escrever'))key='roteiro';
+  if(m.includes('thumbnail')||m.includes('capa')||m.includes('ctr')||m.includes('clique'))key='thumbnail';
+  if(m.includes('anali')||m.includes('dados')||m.includes('métr')||m.includes('metric'))key='analisar';
+  const arr=AI_KB[key]||AI_KB.default;
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
 const aiHist=[];
 document.getElementById('init-t').textContent=tnow();
 
@@ -798,118 +879,48 @@ function appendMsg(text,role){
   const box=document.getElementById('msgs');
   const row=document.createElement('div');
   row.className='mrow'+(role==='user'?' usr':'');
-  const icon=role==='user'?`<div class="mav us"><i class="ti ti-user"></i></div>`:`<div class="mav ai"><i class="ti ti-sparkles"></i></div>`;
-  const txt=role==='ai'?text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>'):text;
-  row.innerHTML=`${icon}<div><div class="bbl ${role==='user'?'us':'ai'}">${txt}</div><div class="mtime">${tnow()}</div></div>`;
-  box.appendChild(row);box.scrollTop=box.scrollHeight;
-  return row;
+  const icon=role==='user'
+    ?'<div class="mav us"><i class="ti ti-user"></i></div>'
+    :'<div class="mav ai"><i class="ti ti-sparkles"></i></div>';
+  const txt=role==='ai'
+    ?text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>')
+    :text;
+  row.innerHTML=icon+'<div><div class="bbl '+(role==='user'?'us':'ai')+'">'+txt+'</div><div class="mtime">'+tnow()+'</div></div>';
+  box.appendChild(row);
+  box.scrollTop=box.scrollHeight;
 }
 
 function appendLoading(){
   const box=document.getElementById('msgs');
   const row=document.createElement('div');row.className='mrow';row.id='ld-row';
-  row.innerHTML=`<div class="mav ai"><i class="ti ti-sparkles"></i></div><div><div class="bbl ai"><div class="tdots"><span></span><span></span><span></span></div></div></div>`;
+  row.innerHTML='<div class="mav ai"><i class="ti ti-sparkles"></i></div><div><div class="bbl ai"><div class="tdots"><span></span><span></span><span></span></div></div></div>';
   box.appendChild(row);box.scrollTop=box.scrollHeight;
   return row;
 }
 
-async function ask(msg){
+function ask(msg){
   if(!msg)return;
   appendMsg(msg,'user');
   aiHist.push({role:'user',content:msg});
   const lr=appendLoading();
-
-  const key=(localStorage.getItem('ch_key')||'').trim();
-  if(!key){
+  // Simula um tempo de resposta natural (800ms a 1.5s)
+  const delay=800+Math.random()*700;
+  setTimeout(()=>{
+    const reply=getAIResponse(msg);
+    aiHist.push({role:'assistant',content:reply});
     lr.remove();
-    appendMsg('Chave não configurada. Vá em **Configurações** e cole sua chave do OpenRouter.','ai');
-    return;
-  }
-
-  const sys='Você é o Studio AI, assistente especializado em criação de conteúdo para YouTube. Responda em português brasileiro de forma prática, direta e calorosa. Máximo 3 parágrafos. Use **negrito** para pontos-chave e *itálico* para exemplos.'
-    +(tasks.length ? ' Tarefas: '+tasks.map(t=>(t.done?'✓':'○')+' '+t.name).join(', ') : '')
-    +(recs.length  ? ' Gravações: '+recs.map(r=>r.name).join(', ') : '');
-
-  const messages=[{role:'system',content:sys},...aiHist.slice(-14)];
-
-  // Modelos gratuitos pra tentar em ordem
-  const MODELS=[
-    'sourceful/riverflow-v2.5-fast:free',
-    'sourceful/riverflow-v2.5-pro:free',
-    'google/gemma-2-9b-it:free',
-    'meta-llama/llama-3.2-3b-instruct:free',
-    'meta-llama/llama-3.1-8b-instruct:free',
-    'qwen/qwen-2-7b-instruct:free',
-    'mistralai/mistral-7b-instruct:free',
-    'huggingfaceh4/zephyr-7b-beta:free',
-    'openchat/openchat-7b:free',
-    'gryphe/mythomist-7b:free',
-  ];
-
-  // Timer
-  let secs=0;
-  const timer=setInterval(()=>{
-    secs++;
-    const dot=document.querySelector('#ld-row .bbl');
-    if(dot)dot.innerHTML=`<div class="tdots"><span></span><span></span><span></span></div><span style="font-size:9px;color:var(--txt2);margin-left:6px">${secs}s</span>`;
-  },1000);
-
-  let lastErr='';
-  for(const model of MODELS){
-    try{
-      const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),30000);
-      const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
-        method:'POST',
-        signal:controller.signal,
-        headers:{
-          'Content-Type':'application/json',
-          'Authorization':'Bearer '+key,
-          'HTTP-Referer':'https://creator-hub.github.io',
-          'X-Title':'Creator Hub'
-        },
-        body:JSON.stringify({model,messages,max_tokens:800,temperature:0.7})
-      });
-      clearTimeout(timeout);
-      const data=await res.json();
-      // Se modelo não encontrado, tenta o próximo
-      if(data.error){
-        const em=data.error.message||'';
-        if(em.includes('endpoint')||em.includes('No endpoints')||em.includes('Provider')){
-          lastErr=em;
-          continue;
-        }
-        throw new Error(em);
-      }
-      const reply=data.choices?.[0]?.message?.content||data.choices?.[0]?.text||'';
-      if(!reply){lastErr='Resposta vazia';continue;}
-      // Salvou qual modelo funcionou
-      localStorage.setItem('ch_model',model);
-      aiHist.push({role:'assistant',content:reply});
-      clearInterval(timer);
-      lr.remove();
-      appendMsg(reply,'ai');
-      return;
-    }catch(err){
-      if(err.name==='AbortError'){lastErr='Timeout';continue;}
-      lastErr=err.message;
-      continue;
-    }
-  }
-
-  clearInterval(timer);
-  lr.remove();
-  appendMsg('Nenhum modelo gratuito disponível agora. Tente novamente em alguns minutos. ('+lastErr+')','ai');
+    appendMsg(reply,'ai');
+  },delay);
 }
 
-async function submit(){
+function submit(){
   const inp=document.getElementById('chat-inp');
   const v=inp.value.trim();if(!v)return;
   inp.value='';inp.style.height='auto';
-  await ask(v);
+  ask(v);
 }
 
-// Profile
+// ── PERFIL ──
 function upPreview(){
   document.getElementById('p-name').textContent=document.getElementById('s-name').value||'Seu nome';
   document.getElementById('p-email').textContent=document.getElementById('s-email').value||'seu@email.com';
@@ -920,30 +931,12 @@ function saveProfile(){
   localStorage.setItem('ch_prof',JSON.stringify({name:document.getElementById('s-name').value,email:document.getElementById('s-email').value,chan:document.getElementById('s-chan').value,bio:document.getElementById('s-bio').value}));
   toast('Perfil salvo!');
 }
-function saveKey(){
-  const k=document.getElementById('s-key').value.trim();
-  if(!k||k==='••••••••••••••••••••'){toast('Cole sua chave sk-or-... no campo');return}
-  if(!k.startsWith('sk-or-')){
-    toast('Chave inválida. Deve começar com sk-or-');
-    return;
-  }
-  localStorage.removeItem('ch_key');
-  localStorage.setItem('ch_key',k);
-  document.getElementById('s-key').value='••••••••••••••••••••';
-  toast('Chave salva! A IA já está funcionando.');
-}
-function loadSettingsKey(){
-  const k=localStorage.getItem('ch_key')||'';
-  const el=document.getElementById('s-key');
-  if(el){el.value=k?'••••••••••••••••••••':'';el.placeholder=k?'Chave salva (cole novamente para trocar)':'Cole sua chave sk-or-...';}
-}
 function clearData(){
   if(!confirm('Apagar todas as tarefas, gravações e eventos?'))return;
   localStorage.removeItem('ch_tasks');localStorage.removeItem('ch_recs');localStorage.removeItem('ch_evs');
   tasks=[];recs=[];events=[];
   renderDTasks();renderDRecs();toast('Dados apagados');
 }
-
 document.getElementById('av-file').onchange=function(){
   const f=this.files[0];if(!f)return;
   const r=new FileReader();r.onload=e=>{
@@ -954,7 +947,6 @@ document.getElementById('av-file').onchange=function(){
     localStorage.setItem('ch_av',s);toast('Foto atualizada');
   };r.readAsDataURL(f);
 };
-
 function loadProfile(){
   const p=JSON.parse(localStorage.getItem('ch_prof')||'{}');
   if(p.name){document.getElementById('s-name').value=p.name;document.getElementById('p-name').textContent=p.name;document.getElementById('sb-name').textContent=p.name}
@@ -965,7 +957,7 @@ function loadProfile(){
   if(av){['av-img','sb-img'].forEach(id=>{const el=document.getElementById(id);el.src=av;el.style.display='block'});document.getElementById('av-ic').style.display='none';document.getElementById('sb-ic').style.display='none'}
 }
 
-// Init
+// ── INIT ──
 loadProfile();
 renderDTasks();
 renderDRecs();
