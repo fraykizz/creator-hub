@@ -333,9 +333,151 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:9px 16px;font-size:11px;color:var(--txt1);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:200;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdsAHoraoKLtJ25MOZ234BQIlmQrzEWoQ",
+    authDomain: "creator-hub-893e2.firebaseapp.com",
+    projectId: "creator-hub-893e2",
+    storageBucket: "creator-hub-893e2.firebasestorage.app",
+    messagingSenderId: "371392322617",
+    appId: "1:371392322617:web:9e11ba0338224fbb2281e8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Expose to global scope
+  window._fbAuth = auth;
+  window._fbDb = db;
+  window._fbFns = {
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, onAuthStateChanged, updateProfile,
+    doc, setDoc, getDoc, collection, getDocs
+  };
+
+  // Auth state listener
+  onAuthStateChanged(auth, user => {
+    window._fbUser = user;
+    if (user) {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'flex';
+      window.loadUserData(user.uid);
+      // Update profile display
+      const name = user.displayName || user.email.split('@')[0];
+      document.getElementById('sb-name').textContent = name;
+      document.getElementById('p-name').textContent = name;
+      document.getElementById('p-email').textContent = user.email;
+      if (document.getElementById('s-name')) document.getElementById('s-name').value = user.displayName || '';
+      if (document.getElementById('s-email')) document.getElementById('s-email').value = user.email;
+    } else {
+      document.getElementById('auth-screen').style.display = 'flex';
+      document.getElementById('app-screen').style.display = 'none';
+    }
+  });
+
+  window.fbRegister = async (email, password, name) => {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(cred.user, { displayName: name });
+    await setDoc(doc(db, 'users', cred.user.uid), { name, email, createdAt: Date.now() });
+    return cred.user;
+  };
+
+  window.fbLogin = async (email, password) => {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    return cred.user;
+  };
+
+  window.fbLogout = async () => {
+    await signOut(auth);
+  };
+
+  window.fbSaveData = async (uid, key, data) => {
+    const fns = window._fbFns;
+    await fns.setDoc(fns.doc(window._fbDb, 'users', uid, 'data', key), { value: JSON.stringify(data) });
+  };
+
+  window.fbLoadData = async (uid, key) => {
+    const fns = window._fbFns;
+    const snap = await fns.getDoc(fns.doc(window._fbDb, 'users', uid, 'data', key));
+    if (snap.exists()) return JSON.parse(snap.data().value);
+    return null;
+  };
+
+  window.loadUserData = async (uid) => {
+    try {
+      const t = await window.fbLoadData(uid, 'tasks');
+      const r = await window.fbLoadData(uid, 'recs');
+      const e = await window.fbLoadData(uid, 'events');
+      if (t) { window._tasks = t; localStorage.setItem('ch_tasks', JSON.stringify(t)); }
+      if (r) { window._recs = r; localStorage.setItem('ch_recs', JSON.stringify(r)); }
+      if (e) { window._events = e; localStorage.setItem('ch_evs', JSON.stringify(e)); }
+      if (typeof renderDTasks === 'function') renderDTasks();
+      if (typeof renderDRecs === 'function') renderDRecs();
+    } catch(err) { console.error('Erro ao carregar dados:', err); }
+  };
+</script>
 </head>
 <body>
 
+<!-- AUTH SCREEN -->
+<div id="auth-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;font-family:var(--sans)">
+  <div style="width:360px;max-width:calc(100vw - 32px)">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="width:52px;height:52px;border-radius:13px;background:var(--acc);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+        <i class="ti ti-video" style="font-size:24px;color:var(--bg)"></i>
+      </div>
+      <div style="font-family:var(--serif);font-size:26px;font-style:italic;color:var(--txt0)" id="auth-title">Bem-vindo</div>
+      <div style="font-size:12px;color:var(--txt2);margin-top:5px" id="auth-sub">Entre na sua conta</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="form-login" style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px">Email</label>
+        <input id="l-email" type="email" placeholder="seu@email.com" style="width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:9px;padding:11px 14px;font-size:13px;color:var(--txt0);font-family:var(--sans);outline:none;transition:border-color .18s" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bg3)'" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div>
+        <label style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px">Senha</label>
+        <input id="l-pass" type="password" placeholder="••••••••" style="width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:9px;padding:11px 14px;font-size:13px;color:var(--txt0);font-family:var(--sans);outline:none;transition:border-color .18s" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bg3)'" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div id="auth-err" style="font-size:11px;color:var(--red);display:none;padding:4px 2px"></div>
+      <button onclick="doLogin()" style="background:var(--acc);color:var(--bg);border:none;border-radius:9px;padding:12px;font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .18s;margin-top:4px" onmouseover="this.style.background='var(--acc2)'" onmouseout="this.style.background='var(--acc)'">Entrar</button>
+      <div style="text-align:center;font-size:11px;color:var(--txt2);margin-top:4px">
+        Não tem conta? <span onclick="showRegister()" style="color:var(--acc);cursor:pointer">Criar conta</span>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="form-register" style="display:none;flex-direction:column;gap:10px">
+      <div>
+        <label style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px">Nome</label>
+        <input id="r-name" type="text" placeholder="Seu nome" style="width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:9px;padding:11px 14px;font-size:13px;color:var(--txt0);font-family:var(--sans);outline:none;transition:border-color .18s" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bg3)'" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <div>
+        <label style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px">Email</label>
+        <input id="r-email" type="email" placeholder="seu@email.com" style="width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:9px;padding:11px 14px;font-size:13px;color:var(--txt0);font-family:var(--sans);outline:none;transition:border-color .18s" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bg3)'" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <div>
+        <label style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px">Senha</label>
+        <input id="r-pass" type="password" placeholder="Mínimo 6 caracteres" style="width:100%;background:var(--bg2);border:1px solid var(--bg3);border-radius:9px;padding:11px 14px;font-size:13px;color:var(--txt0);font-family:var(--sans);outline:none;transition:border-color .18s" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bg3)'" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <div id="auth-err2" style="font-size:11px;color:var(--red);display:none;padding:4px 2px"></div>
+      <button onclick="doRegister()" style="background:var(--acc);color:var(--bg);border:none;border-radius:9px;padding:12px;font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .18s;margin-top:4px" onmouseover="this.style.background='var(--acc2)'" onmouseout="this.style.background='var(--acc)'">Criar conta</button>
+      <div style="text-align:center;font-size:11px;color:var(--txt2);margin-top:4px">
+        Já tem conta? <span onclick="showLogin()" style="color:var(--acc);cursor:pointer">Entrar</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen" style="display:none;flex:1;overflow:hidden">
 <nav class="sb" id="sb">
   <div class="sb-logo" onclick="toggleSb()"><i class="ti ti-video"></i></div>
   <div class="sb-lbl">Principal</div>
@@ -556,6 +698,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
         <div class="card-h"><span class="card-lbl">Dados</span></div>
         <p style="font-size:11.5px;color:var(--txt2);line-height:1.65;margin-bottom:12px">Tarefas, gravações e eventos ficam salvos neste dispositivo.</p>
         <button class="danger-btn" onclick="clearData()"><i class="ti ti-trash" style="font-size:12px;margin-right:5px"></i>Limpar todos os dados</button>
+        <button class="danger-btn" onclick="doLogout()" style="border-color:var(--acc);color:var(--acc)"><i class="ti ti-logout" style="font-size:12px;margin-right:5px"></i>Sair da conta</button>
       </div>
     </div>
   </section>
@@ -588,6 +731,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 </div>
 
 <div class="toast" id="toast"></div>
+</div><!-- /app-screen -->
 
 <script>
 // ── YOUTUBE OAuth ──
@@ -838,9 +982,18 @@ function toggleSb(){document.getElementById('sb').classList.toggle('open')}
 let tasks=JSON.parse(localStorage.getItem('ch_tasks')||'[]');
 let recs=JSON.parse(localStorage.getItem('ch_recs')||'[]');
 let events=JSON.parse(localStorage.getItem('ch_evs')||'[]');
-function saveTasks(){localStorage.setItem('ch_tasks',JSON.stringify(tasks))}
-function saveRecs(){localStorage.setItem('ch_recs',JSON.stringify(recs))}
-function saveEvs(){localStorage.setItem('ch_evs',JSON.stringify(events))}
+function saveTasks(){
+  localStorage.setItem('ch_tasks',JSON.stringify(tasks));
+  if(window._fbUser) window.fbSaveData(window._fbUser.uid,'tasks',tasks).catch(()=>{});
+}
+function saveRecs(){
+  localStorage.setItem('ch_recs',JSON.stringify(recs));
+  if(window._fbUser) window.fbSaveData(window._fbUser.uid,'recs',recs).catch(()=>{});
+}
+function saveEvs(){
+  localStorage.setItem('ch_evs',JSON.stringify(events));
+  if(window._fbUser) window.fbSaveData(window._fbUser.uid,'events',events).catch(()=>{});
+}
 
 // ── PRAZO ──
 function dateLabel(dateStr){
@@ -1126,6 +1279,55 @@ function loadProfile(){
   if(p.bio)document.getElementById('s-bio').value=p.bio;
   const av=localStorage.getItem('ch_av');
   if(av){['av-img','sb-img'].forEach(id=>{const el=document.getElementById(id);el.src=av;el.style.display='block'});document.getElementById('av-ic').style.display='none';document.getElementById('sb-ic').style.display='none'}
+}
+
+// ── AUTH FUNCTIONS ──
+function showRegister(){
+  document.getElementById('form-login').style.display='none';
+  document.getElementById('form-register').style.display='flex';
+  document.getElementById('auth-title').textContent='Criar conta';
+  document.getElementById('auth-sub').textContent='Comece agora, é grátis';
+}
+function showLogin(){
+  document.getElementById('form-register').style.display='none';
+  document.getElementById('form-login').style.display='flex';
+  document.getElementById('auth-title').textContent='Bem-vindo';
+  document.getElementById('auth-sub').textContent='Entre na sua conta';
+}
+function authErrMsg(id, msg){
+  const el=document.getElementById(id);
+  el.textContent=msg;el.style.display='block';
+  setTimeout(()=>el.style.display='none',4000);
+}
+function friendlyError(code){
+  const map={
+    'auth/email-already-in-use':'Este email já está cadastrado.',
+    'auth/invalid-email':'Email inválido.',
+    'auth/weak-password':'Senha muito fraca. Use pelo menos 6 caracteres.',
+    'auth/user-not-found':'Email não encontrado.',
+    'auth/wrong-password':'Senha incorreta.',
+    'auth/invalid-credential':'Email ou senha incorretos.',
+    'auth/too-many-requests':'Muitas tentativas. Tente novamente mais tarde.',
+  };
+  return map[code]||'Erro ao autenticar. Tente novamente.';
+}
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  if(!email||!pass){authErrMsg('auth-err','Preencha todos os campos');return}
+  try{ await window.fbLogin(email,pass); }
+  catch(e){ authErrMsg('auth-err',friendlyError(e.code)); }
+}
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  if(!name||!email||!pass){authErrMsg('auth-err2','Preencha todos os campos');return}
+  try{ await window.fbRegister(email,pass,name); }
+  catch(e){ authErrMsg('auth-err2',friendlyError(e.code)); }
+}
+function doLogout(){
+  if(confirm('Sair da sua conta?')) window.fbLogout();
 }
 
 // ── INIT ──
