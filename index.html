@@ -542,8 +542,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
         <div style="margin-top:12px"><button class="btn-a" onclick="saveProfile()"><i class="ti ti-check"></i>Salvar perfil</button></div>
       </div>
       <div class="card">
-        <div class="card-h"><span class="card-lbl">Chave do Gemini (IA)</span></div>
-        <p style="font-size:11px;color:var(--txt2);line-height:1.6;margin-bottom:10px">Cole aqui sua chave do Google AI Studio para ativar o assistente. Ela fica salva só no seu dispositivo.</p>
+        <div class="card-h"><span class="card-lbl">Chave do OpenRouter (IA gratuita)</span></div>
+        <p style="font-size:11px;color:var(--txt2);line-height:1.6;margin-bottom:10px">Cole aqui sua chave do OpenRouter (openrouter.ai). É grátis, sem cartão. A chave fica salva só no seu dispositivo.</p>
         <div class="sf" style="margin-bottom:0"><label>API Key</label><input id="s-key" type="password" placeholder="Cole sua chave aqui..."></div>
         <div style="margin-top:12px"><button class="btn-a" onclick="saveKey()"><i class="ti ti-check"></i>Salvar chave</button></div>
       </div>
@@ -819,42 +819,41 @@ async function ask(msg){
   aiHist.push({role:'user',content:msg});
   const lr=appendLoading();
 
-  // Pega chave: primeiro do localStorage, depois do default no código
-  const key=(localStorage.getItem('ch_key')||GEMINI_KEY_DEFAULT||'').trim();
+  const key=(localStorage.getItem('ch_key')||'').trim();
   if(!key){
     lr.remove();
-    appendMsg('Chave do Gemini não configurada. Vá em **Configurações** e cole sua chave do Google AI Studio.','ai');
+    appendMsg('Chave não configurada. Vá em **Configurações** e cole sua chave do OpenRouter.','ai');
     return;
   }
 
-  const sys=`Você é o Studio AI, assistente especializado em criação de conteúdo para YouTube. Responda em português brasileiro de forma prática, direta e calorosa. Máximo 3 parágrafos. Use **negrito** para pontos-chave e *itálico* para exemplos.`
-    +(tasks.length?`\nTarefas do usuário: ${tasks.map(t=>`${t.done?'✓':'○'} ${t.name}`).join(', ')}`:'' )
-    +(recs.length?`\nGravações: ${recs.map(r=>r.name).join(', ')}`:'' );
+  const sys='Você é o Studio AI, assistente especializado em criação de conteúdo para YouTube. Responda em português brasileiro de forma prática, direta e calorosa. Máximo 3 parágrafos. Use **negrito** para pontos-chave e *itálico* para exemplos.'
+    +(tasks.length ? ' Tarefas: '+tasks.map(t=>(t.done?'✓':'○')+' '+t.name).join(', ') : '')
+    +(recs.length  ? ' Gravações: '+recs.map(r=>r.name).join(', ') : '');
 
-  // Monta conteúdo para o Gemini garantindo alternância user/model
-  const raw=aiHist.slice(-14);
-  const contents=[];
-  raw.forEach(m=>{
-    const role=m.role==='assistant'?'model':'user';
-    if(contents.length&&contents[contents.length-1].role===role){
-      contents[contents.length-1].parts[0].text+='\n'+m.content;
-    }else{
-      contents.push({role,parts:[{text:m.content}]});
-    }
-  });
-  if(!contents.length||contents[0].role!=='user')contents.unshift({role:'user',parts:[{text:msg}]});
+  const messages=[{role:'system',content:sys},...aiHist.slice(-14)];
 
   try{
-    const res=await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {method:'POST',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents,generationConfig:{maxOutputTokens:1000,temperature:0.8}})}
-    );
+    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+key,
+        'HTTP-Referer':'https://creator-hub.github.io',
+        'X-Title':'Creator Hub'
+      },
+      body:JSON.stringify({
+        model:'meta-llama/llama-3.3-70b-instruct:free',
+        messages,
+        max_tokens:1000,
+        temperature:0.8
+      })
+    });
     const data=await res.json();
     if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
-    const reply=data.candidates?.[0]?.content?.parts?.[0]?.text||'Não consegui processar. Tente novamente.';
+    const reply=data.choices?.[0]?.message?.content||'Não consegui processar. Tente novamente.';
     aiHist.push({role:'assistant',content:reply});
-    lr.remove();appendMsg(reply,'ai');
+    lr.remove();
+    appendMsg(reply,'ai');
   }catch(err){
     lr.remove();
     appendMsg('Erro: '+(err.message||'Verifique sua chave e tente novamente.'),'ai');
