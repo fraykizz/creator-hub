@@ -1617,13 +1617,14 @@ function genTitles() {
       'O erro que todo mundo comete ao ' + desc,
       desc + ' do ZERO ao AVANÇADO em ' + (Math.floor(Math.random()*8)+3) + ' minutos',
     ];
-    out.innerHTML = templates.map((t, i) =>
-      '<div class="trow" style="cursor:pointer" onclick="navigator.clipboard.writeText('' + t.replace(/'/g, '') + '');toast('Título copiado!')">'
+    out.innerHTML = templates.map((t, i) => {
+      const safe = t.replace(/"/g, '&quot;');
+      return '<div class="trow" style="cursor:pointer" onclick="copyTitle(this)"  data-title="' + safe + '">'
       + '<span style="font-size:10px;color:var(--acc2);font-weight:600;flex-shrink:0">' + (i+1) + '</span>'
       + '<span class="tlbl">' + t + '</span>'
       + '<i class="ti ti-copy" style="font-size:13px;color:var(--txt2)"></i>'
-      + '</div>'
-    ).join('');
+      + '</div>';
+    }).join('');
   }, 600);
 }
 
