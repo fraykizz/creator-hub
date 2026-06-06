@@ -478,7 +478,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 </div>
 
 <!-- APP SCREEN -->
-<div id="app-screen" style="display:none;flex:1;overflow:hidden">
+<div id="app-screen" style="display:flex;flex:1;overflow:hidden">
 <nav class="sb" id="sb">
   <div class="sb-logo" onclick="toggleSb()"><i class="ti ti-video"></i></div>
   <div class="sb-lbl">Principal</div>
@@ -1050,17 +1050,7 @@ THEMES.forEach(t=>{
 applyTheme(curTheme);
 
 // ── NAVEGAÇÃO ──
-function go(p){
-  document.querySelectorAll('.pg').forEach(e=>e.classList.remove('act'));
-  document.querySelectorAll('.ni[data-p]').forEach(e=>e.classList.toggle('act',e.dataset.p===p));
-  document.getElementById('pg-'+p).classList.add('act');
-  document.getElementById('pg-title').textContent=PAGES[p]||p;
-  if(p==='tasks')renderTasks();
-  if(p==='recs')renderRecs();
-  if(p==='cal')renderCal();
-  if(p==='dash'){renderDTasks();renderDRecs()}
-}
-document.querySelectorAll('.ni[data-p]').forEach(e=>e.onclick=()=>go(e.dataset.p));
+// go() defined below with full page support
 function toggleSb(){document.getElementById('sb').classList.toggle('open')}
 
 // ── DADOS ──
@@ -1603,6 +1593,10 @@ function renderChecklist() {
 }
 
 // ── GERADOR DE TÍTULOS ──
+function copyTitle(el) {
+  const t = el.getAttribute('data-title');
+  navigator.clipboard.writeText(t).then(() => toast('Título copiado!'));
+}
 function genTitles() {
   const inp = document.getElementById('title-inp');
   const desc = inp.value.trim();
@@ -1728,9 +1722,7 @@ function showSquadTaskModal() {
   toast('Tarefa de squad criada');
 }
 
-// ── UPDATE go() TO RENDER NEW PAGES ──
-const _origGo = go;
-// Override go to handle new pages
+// ── go() - MAIN NAVIGATION ──
 function go(p) {
   document.querySelectorAll('.pg').forEach(e=>e.classList.remove('act'));
   document.querySelectorAll('.ni[data-p]').forEach(e=>e.classList.toggle('act',e.dataset.p===p));
