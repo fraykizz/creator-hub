@@ -399,7 +399,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAdsAHoraoKLtJ25MOZ234BQIlmQrzEWoQ",
@@ -417,10 +417,11 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   // Expose to global scope
   window._fbAuth = auth;
   window._fbDb = db;
+  const fns_module = { doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp };
   window._fbFns = {
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
     signOut, onAuthStateChanged, updateProfile,
-    doc, setDoc, getDoc, collection, getDocs
+    doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp
   };
 
   // Auth state listener
@@ -430,6 +431,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('app-screen').style.display = 'flex';
       window.loadUserData(user.uid);
+      window.savePublicProfile(user);
       // Update profile display
       const name = user.displayName || user.email.split('@')[0];
       document.getElementById('sb-name').textContent = name;
@@ -470,6 +472,39 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
     if (snap.exists()) return JSON.parse(snap.data().value);
     return null;
   };
+
+  // Save/update public profile on login
+  window.savePublicProfile = async (user) => {
+    try {
+      const profileRef = fns_module.doc(db, 'profiles', user.uid);
+      const snap = await fns_module.getDoc(profileRef);
+      const existing = snap.exists() ? snap.data() : {};
+      await fns_module.setDoc(profileRef, {
+        uid: user.uid,
+        name: user.displayName || user.email.split('@')[0],
+        email: user.email,
+        photo: user.photoURL || '',
+        bio: existing.bio || '',
+        channel: existing.channel || '',
+        followers: existing.followers || [],
+        following: existing.following || [],
+        updatedAt: Date.now()
+      }, { merge: true });
+    } catch(e) { console.error('Profile save error:', e); }
+  };
+
+  // Expose Firestore ops for social features
+  window.fbCollection = (path) => fns_module.collection(db, path);
+  window.fbDoc = (...args) => fns_module.doc(db, ...args);
+  window.fbGetDoc = (ref) => fns_module.getDoc(ref);
+  window.fbSetDoc = (ref, data, opts) => fns_module.setDoc(ref, data, opts||{});
+  window.fbGetDocs = (ref) => fns_module.getDocs(ref);
+  window.fbAddDoc = (ref, data) => fns_module.addDoc(ref, data);
+  window.fbQuery = (...args) => fns_module.query(...args);
+  window.fbOrderBy = fns_module.orderBy;
+  window.fbLimit = fns_module.limit;
+  window.fbOnSnapshot = fns_module.onSnapshot;
+  window.fbServerTimestamp = fns_module.serverTimestamp;
 
   window.loadUserData = async (uid) => {
     try {
@@ -586,6 +621,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   <div class="mn-more-item" onclick="go('squad');closeMoreMenu()"><i class="ti ti-users-group"></i>Squad</div>
   <div class="mn-more-item" onclick="go('feedback');closeMoreMenu()"><i class="ti ti-message-star"></i>Feedback</div>
   <div class="mn-more-item" onclick="go('settings');closeMoreMenu()"><i class="ti ti-adjustments-horizontal"></i>Config</div>
+  <div class="mn-more-item" onclick="go('people');closeMoreMenu()"><i class="ti ti-world"></i>Comunidade</div>
 </div>
 
 <div style="display:flex;flex:1;overflow:hidden">
@@ -608,6 +644,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   <div class="ni" data-p="checklist" onclick="go('checklist')"><i class="ti ti-list-check"></i><span>Checklist</span></div>
   <div class="ni" data-p="squad" onclick="go('squad')"><i class="ti ti-users-group"></i><span>Squad</span></div>
   <div class="ni" data-p="feedback" onclick="go('feedback')"><i class="ti ti-message-star"></i><span>Feedback</span></div>
+  <div class="ni" data-p="people" onclick="go('people')"><i class="ti ti-world"></i><span>Comunidade</span></div>
   <div class="sb-sep"></div>
   <div class="sb-btm">
     <div class="ni" data-p="settings" onclick="go('settings')"><i class="ti ti-adjustments-horizontal"></i><span>Configurações</span></div>
@@ -846,6 +883,47 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- PROFILE MODAL -->
+<div class="ov" id="profile-modal">
+  <div class="mbox" onclick="event.stopPropagation()" style="width:340px">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+      <div id="pm-avatar" style="width:56px;height:56px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);border:2px solid var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+        <i class="ti ti-user" style="font-size:24px;color:var(--acc2)"></i>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:var(--serif);font-size:17px;font-style:italic;color:var(--txt0)" id="pm-name">Nome</div>
+        <div style="font-size:10px;color:var(--acc)" id="pm-channel"></div>
+        <div style="font-size:10px;color:var(--txt2);margin-top:2px" id="pm-bio"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;margin-bottom:14px;padding:10px 0;border-top:1px solid var(--bg3);border-bottom:1px solid var(--bg3)">
+      <div style="text-align:center;flex:1"><div style="font-family:var(--serif);font-size:18px;color:var(--txt0)" id="pm-followers">0</div><div style="font-size:9px;color:var(--txt2)">seguidores</div></div>
+      <div style="text-align:center;flex:1"><div style="font-family:var(--serif);font-size:18px;color:var(--txt0)" id="pm-following">0</div><div style="font-size:9px;color:var(--txt2)">seguindo</div></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-a" id="pm-follow-btn" onclick="toggleFollow()" style="flex:1">Seguir</button>
+      <button class="btn-g" onclick="openChatWith(window._viewingUid)" style="flex:1"><i class="ti ti-message" style="font-size:13px"></i>Mensagem</button>
+      <button class="btn-g" onclick="document.getElementById('profile-modal').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT MODAL -->
+<div class="ov" id="chat-modal">
+  <div class="mbox" onclick="event.stopPropagation()" style="width:360px;height:480px;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div style="padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--bg3);display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <div style="width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center"><i class="ti ti-user" style="font-size:13px;color:var(--acc2)"></i></div>
+      <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:var(--txt0);flex:1" id="chat-with-name">Chat</span>
+      <button class="xb" style="opacity:1" onclick="document.getElementById('chat-modal').classList.remove('open')"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="chat-msgs" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+    <div style="padding:10px 12px;border-top:1px solid var(--bg3);display:flex;gap:8px;flex-shrink:0">
+      <input class="fin" id="chat-inp-msg" placeholder="Mensagem..." style="flex:1" onkeydown="if(event.key==='Enter')sendChatMsg()">
+      <button class="btn-a" onclick="sendChatMsg()" style="padding:8px 12px"><i class="ti ti-send-2" style="font-size:13px"></i></button>
+    </div>
+  </div>
+</div>
 
 <!-- EVENT DETAIL MODAL -->
 <div class="ov" id="ev-detail-ov">
@@ -1182,7 +1260,7 @@ const THEMES=[
   {id:'aurum',n:'Aurum',a:'#0d0c08',b:'#d4af37'},
   {id:'noir',n:'Noir',a:'#080808',b:'#e0e0e0'},
 ];
-const PAGES={dash:'Painel',tasks:'Tarefas',recs:'Gravações',cal:'Calendário',ai:'Assistente IA',yt:'YouTube Studio',settings:'Configurações',monetization:'Monetização',shorts:'Shorts',history:'Histórico de Crescimento',checklist:'Checklist de Publicação',squad:'Squad',feedback:'Feedback'};
+const PAGES={dash:'Painel',tasks:'Tarefas',recs:'Gravações',cal:'Calendário',ai:'Assistente IA',yt:'YouTube Studio',settings:'Configurações',monetization:'Monetização',shorts:'Shorts',history:'Histórico de Crescimento',checklist:'Checklist de Publicação',squad:'Squad',feedback:'Feedback',people:'Comunidade'};
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DOWS_F=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -2101,6 +2179,7 @@ function go(p) {
   if(p==='checklist')renderChecklist();
   if(p==='squad')renderSquad();
   if(p==='feedback'){loadFeedbacks();}
+  if(p==='people'){loadPeople();}
   if(p==='yt'){renderYT();setTimeout(()=>{renderDashYT();renderMonetization();},500);}
   // Update mobile nav
   document.querySelectorAll('.mn-item[data-p]').forEach(i=>i.classList.toggle('act',i.dataset.p===p));
@@ -2123,24 +2202,24 @@ function setFbType(el) {
 async function submitFeedback() {
   const msg = document.getElementById('fb-msg').value.trim();
   if (!msg) { toast('Escreva uma mensagem primeiro'); return; }
-  if (!window._fbFns || !window._fbDb) { toast('Conecte-se para enviar feedback'); return; }
+  if (!window._fbUser) { toast('Faça login para enviar feedback'); return; }
   try {
     const user = window._fbUser;
     const fb = {
       type: currentFbType,
       message: msg,
-      author: user ? (user.displayName || user.email.split('@')[0]) : 'Anônimo',
-      uid: user ? user.uid : 'anon',
+      author: user.displayName || user.email.split('@')[0],
+      uid: user.uid,
+      photo: user.photoURL || '',
       createdAt: Date.now(),
       date: new Date().toLocaleDateString('pt-BR')
     };
-    const fns = window._fbFns;
-    await fns.setDoc(fns.doc(window._fbDb, 'feedbacks', Date.now() + '_' + (user?.uid||'anon')), fb);
+    await window.fbSetDoc(window.fbDoc('feedbacks', Date.now() + '_' + user.uid), fb);
     document.getElementById('fb-msg').value = '';
     toast('Feedback enviado! Obrigado 💛');
     loadFeedbacks();
   } catch(e) {
-    toast('Erro ao enviar. Tente novamente.');
+    toast('Erro: ' + e.message);
     console.error(e);
   }
 }
@@ -2148,46 +2227,38 @@ async function submitFeedback() {
 async function loadFeedbacks() {
   const el = document.getElementById('fb-list');
   if (!el) return;
-  if (!window._fbFns || !window._fbDb) {
+  if (!window._fbUser) {
     el.innerHTML = '<div class="empty"><i class="ti ti-messages"></i>Faça login para ver feedbacks.</div>';
     return;
   }
   el.innerHTML = '<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';
   try {
-    const fns = window._fbFns;
-    const snap = await getDocs_compat();
-    if (!snap) return;
-  } catch(e) {
-    // Fallback: use getDocs directly
-    try {
-      const fns = window._fbFns;
-      const ref = fns.collection(window._fbDb, 'feedbacks');
-      const snap = await fns.getDocs(ref);
-      const items = [];
-      snap.forEach(doc => items.push(doc.data()));
-      items.sort((a,b) => b.createdAt - a.createdAt);
-      if (!items.length) {
-        el.innerHTML = '<div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda. Seja o primeiro!</div>';
-        return;
-      }
-      const typeLabel = {suggestion:'💡 Sugestão', bug:'🐛 Bug', idea:'✨ Ideia', compliment:'❤️ Elogio'};
-      el.innerHTML = items.map(fb => '<div class="trow" style="align-items:flex-start;gap:10px;padding:10px 0">'
-        + '<div style="width:32px;height:32px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-user" style="font-size:14px;color:var(--acc2)"></i></div>'
-        + '<div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-        + '<span style="font-size:12px;color:var(--txt1);font-weight:500">' + fb.author + '</span>'
-        + '<span style="font-size:9px;padding:1px 7px;border-radius:20px;background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc2)">' + (typeLabel[fb.type]||fb.type) + '</span>'
-        + '<span style="font-size:9px;color:var(--txt3);margin-left:auto">' + fb.date + '</span>'
-        + '</div>'
-        + '<div style="font-size:12px;color:var(--txt1);line-height:1.65">' + fb.message + '</div>'
-        + '</div></div>'
-      ).join('');
-    } catch(e2) {
-      el.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro ao carregar feedbacks.</div>';
+    const snap = await window.fbGetDocs(window.fbCollection('feedbacks'));
+    const items = [];
+    snap.forEach(d => items.push(d.data()));
+    items.sort((a,b) => b.createdAt - a.createdAt);
+    if (!items.length) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda. Seja o primeiro!</div>';
+      return;
     }
+    const typeLabel = {suggestion:'💡 Sugestão', bug:'🐛 Bug', idea:'✨ Ideia', compliment:'❤️ Elogio'};
+    el.innerHTML = items.map(fb => '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg3);cursor:pointer" onclick="openProfile(event)" data-uid="' + fb.uid + '">'
+      + '<div style="width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">'
+      + (fb.photo ? '<img src="'+fb.photo+'" style="width:100%;height:100%;object-fit:cover">' : '<i class="ti ti-user" style="font-size:14px;color:var(--acc2)"></i>')
+      + '</div>'
+      + '<div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">'
+      + '<span style="font-size:12px;color:var(--txt1);font-weight:500">' + fb.author + '</span>'
+      + '<span style="font-size:9px;padding:1px 7px;border-radius:20px;background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc2)">' + (typeLabel[fb.type]||fb.type) + '</span>'
+      + '<span style="font-size:9px;color:var(--txt3);margin-left:auto">' + fb.date + '</span>'
+      + '</div>'
+      + '<div style="font-size:12px;color:var(--txt1);line-height:1.65">' + fb.message + '</div>'
+      + '</div></div>'
+    ).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro: ' + e.message + '</div>';
+    console.error(e);
   }
 }
-
-async function getDocs_compat() { return null; } // placeholder
 
 // ── MOBILE NAV ──
 function setMobileActive(el) {
@@ -2207,6 +2278,184 @@ function closeMoreMenu() {
 
 
 
+
+// ── SOCIAL: PERFIS, SEGUIR, CHAT ──
+window._viewingUid = null;
+let _chatUnsub = null;
+
+function openProfile(event) {
+  const el = event.currentTarget || event.target.closest('[data-uid]');
+  const uid = el && el.getAttribute('data-uid');
+  if (uid) viewProfile(uid);
+}
+
+
+async function viewProfile(uid) {
+  if (!uid || uid === 'anon') return;
+  window._viewingUid = uid;
+  const modal = document.getElementById('profile-modal');
+  modal.classList.add('open');
+  try {
+    const snap = await window.fbGetDoc(window.fbDoc('profiles', uid));
+    const p = snap.exists() ? snap.data() : { name: 'Usuário', bio: '', channel: '', followers: [], following: [] };
+    document.getElementById('pm-name').textContent = p.name || 'Usuário';
+    document.getElementById('pm-channel').textContent = p.channel || '';
+    document.getElementById('pm-bio').textContent = p.bio || '';
+    document.getElementById('pm-followers').textContent = (p.followers||[]).length;
+    document.getElementById('pm-following').textContent = (p.following||[]).length;
+    const avEl = document.getElementById('pm-avatar');
+    if (p.photo) avEl.innerHTML = '<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">';
+    else avEl.innerHTML = '<i class="ti ti-user" style="font-size:24px;color:var(--acc2)"></i>';
+    // Check if already following
+    const me = window._fbUser;
+    if (me && me.uid !== uid) {
+      const mySnap = await window.fbGetDoc(window.fbDoc('profiles', me.uid));
+      const myData = mySnap.exists() ? mySnap.data() : {};
+      const following = myData.following || [];
+      const btn = document.getElementById('pm-follow-btn');
+      const isFollowing = following.includes(uid);
+      btn.textContent = isFollowing ? 'Seguindo ✓' : 'Seguir';
+      btn.style.background = isFollowing ? 'var(--bg3)' : 'var(--acc)';
+      btn.style.color = isFollowing ? 'var(--txt1)' : 'var(--bg)';
+      btn.style.border = isFollowing ? '1px solid var(--bg4)' : 'none';
+    } else {
+      document.getElementById('pm-follow-btn').style.display = uid === me?.uid ? 'none' : 'block';
+    }
+  } catch(e) {
+    console.error('Profile load error:', e);
+  }
+}
+
+async function toggleFollow() {
+  const uid = window._viewingUid;
+  const me = window._fbUser;
+  if (!me || !uid || me.uid === uid) return;
+  try {
+    const myRef = window.fbDoc('profiles', me.uid);
+    const theirRef = window.fbDoc('profiles', uid);
+    const [mySnap, theirSnap] = await Promise.all([window.fbGetDoc(myRef), window.fbGetDoc(theirRef)]);
+    const myData = mySnap.exists() ? mySnap.data() : { following: [] };
+    const theirData = theirSnap.exists() ? theirSnap.data() : { followers: [] };
+    const myFollowing = myData.following || [];
+    const theirFollowers = theirData.followers || [];
+    const isFollowing = myFollowing.includes(uid);
+    if (isFollowing) {
+      // Unfollow
+      const newFollowing = myFollowing.filter(id => id !== uid);
+      const newFollowers = theirFollowers.filter(id => id !== me.uid);
+      await Promise.all([
+        window.fbSetDoc(myRef, { following: newFollowing }, { merge: true }),
+        window.fbSetDoc(theirRef, { followers: newFollowers }, { merge: true })
+      ]);
+      toast('Deixou de seguir');
+    } else {
+      // Follow
+      await Promise.all([
+        window.fbSetDoc(myRef, { following: [...myFollowing, uid] }, { merge: true }),
+        window.fbSetDoc(theirRef, { followers: [...theirFollowers, me.uid] }, { merge: true })
+      ]);
+      toast('Seguindo! 🎉');
+    }
+    viewProfile(uid); // Refresh
+  } catch(e) {
+    toast('Erro: ' + e.message);
+  }
+}
+
+function openChatWith(uid) {
+  if (!uid || !window._fbUser) return;
+  document.getElementById('profile-modal').classList.remove('open');
+  const chatId = [window._fbUser.uid, uid].sort().join('_');
+  window._currentChatId = chatId;
+  window._currentChatUid = uid;
+  // Get name
+  window.fbGetDoc(window.fbDoc('profiles', uid)).then(snap => {
+    const name = snap.exists() ? (snap.data().name || 'Usuário') : 'Usuário';
+    document.getElementById('chat-with-name').textContent = name;
+  });
+  document.getElementById('chat-msgs').innerHTML = '<div class="empty" style="padding:16px"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>';
+  document.getElementById('chat-modal').classList.add('open');
+  // Load messages with real-time listener
+  if (_chatUnsub) _chatUnsub();
+  try {
+    const msgsRef = window.fbCollection('chats/' + chatId + '/messages');
+    const q = window.fbQuery(msgsRef, window.fbOrderBy('createdAt', 'asc'), window.fbLimit(50));
+    _chatUnsub = window.fbOnSnapshot(q, (snap) => {
+      const box = document.getElementById('chat-msgs');
+      if (!box) return;
+      const msgs = [];
+      snap.forEach(d => msgs.push(d.data()));
+      if (!msgs.length) {
+        box.innerHTML = '<div class="empty" style="padding:16px"><i class="ti ti-message"></i>Nenhuma mensagem ainda.</div>';
+        return;
+      }
+      box.innerHTML = msgs.map(m => {
+        const isMe = m.uid === window._fbUser?.uid;
+        return '<div style="display:flex;justify-content:' + (isMe?'flex-end':'flex-start') + '">'
+          + '<div style="max-width:75%;padding:8px 12px;border-radius:' + (isMe?'10px 10px 3px 10px':'10px 10px 10px 3px') + ';background:' + (isMe?'color-mix(in srgb,var(--acc) 16%,transparent)':'var(--bg3)') + ';border:1px solid ' + (isMe?'color-mix(in srgb,var(--acc) 25%,transparent)':'var(--bg4)') + ';font-size:12px;color:var(--txt0);line-height:1.55">'
+          + m.text
+          + '<div style="font-size:8px;color:var(--txt3);margin-top:3px;text-align:right">' + (m.time||'') + '</div>'
+          + '</div></div>';
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    });
+  } catch(e) {
+    document.getElementById('chat-msgs').innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro ao carregar chat.</div>';
+  }
+}
+
+async function sendChatMsg() {
+  const inp = document.getElementById('chat-inp-msg');
+  const text = inp.value.trim();
+  if (!text || !window._currentChatId || !window._fbUser) return;
+  inp.value = '';
+  const me = window._fbUser;
+  try {
+    const msgsRef = window.fbCollection('chats/' + window._currentChatId + '/messages');
+    await window.fbAddDoc(msgsRef, {
+      text,
+      uid: me.uid,
+      name: me.displayName || me.email.split('@')[0],
+      time: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}),
+      createdAt: Date.now()
+    });
+  } catch(e) {
+    toast('Erro ao enviar mensagem');
+  }
+}
+
+// ── ADD SOCIAL NAV ──
+async function loadPeople() {
+  const el = document.getElementById('people-list');
+  if (!el || !window._fbUser) return;
+  el.innerHTML = '<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';
+  try {
+    const snap = await window.fbGetDocs(window.fbCollection('profiles'));
+    const people = [];
+    snap.forEach(d => people.push(d.data()));
+    const others = people.filter(p => p.uid !== window._fbUser.uid);
+    if (!others.length) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-users"></i>Nenhum outro criador ainda. Convide amigos!</div>';
+      return;
+    }
+    el.innerHTML = others.map(p => '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bg3);cursor:pointer" onclick="openProfile(event)" data-uid="' + p.uid + '">'
+      + '<div style="width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--acc) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">'
+      + (p.photo ? '<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">' : '<i class="ti ti-user" style="font-size:16px;color:var(--acc2)"></i>')
+      + '</div>'
+      + '<div style="flex:1"><div style="font-size:12px;color:var(--txt1);font-weight:500">' + (p.name||'Usuário') + '</div>'
+      + (p.channel ? '<div style="font-size:9px;color:var(--acc)">' + p.channel + '</div>' : '')
+      + (p.bio ? '<div style="font-size:10px;color:var(--txt2)">' + p.bio + '</div>' : '')
+      + '</div>'
+      + '<div style="font-size:9px;color:var(--txt2);text-align:right">'
+      + '<div>' + (p.followers||[]).length + ' seg.</div>'
+      + '</div>'
+      + '</div>'
+    ).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro ao carregar: ' + e.message + '</div>';
+  }
+}
+
 // ── AUTH FUNCTIONS ──// ── FEEDBACK ──
 currentFbType = 'suggestion';
 
@@ -2216,6 +2465,141 @@ currentFbType = 'suggestion';
 // ── MOBILE NAV ──
 
 
+
+
+// ── SOCIAL: PERFIS, SEGUIR, CHAT ──
+window._viewingUid = null;
+_chatUnsub = null;
+
+async function toggleFollow() {
+  const uid = window._viewingUid;
+  const me = window._fbUser;
+  if (!me || !uid || me.uid === uid) return;
+  try {
+    const myRef = window.fbDoc('profiles', me.uid);
+    const theirRef = window.fbDoc('profiles', uid);
+    const [mySnap, theirSnap] = await Promise.all([window.fbGetDoc(myRef), window.fbGetDoc(theirRef)]);
+    const myData = mySnap.exists() ? mySnap.data() : { following: [] };
+    const theirData = theirSnap.exists() ? theirSnap.data() : { followers: [] };
+    const myFollowing = myData.following || [];
+    const theirFollowers = theirData.followers || [];
+    const isFollowing = myFollowing.includes(uid);
+    if (isFollowing) {
+      // Unfollow
+      const newFollowing = myFollowing.filter(id => id !== uid);
+      const newFollowers = theirFollowers.filter(id => id !== me.uid);
+      await Promise.all([
+        window.fbSetDoc(myRef, { following: newFollowing }, { merge: true }),
+        window.fbSetDoc(theirRef, { followers: newFollowers }, { merge: true })
+      ]);
+      toast('Deixou de seguir');
+    } else {
+      // Follow
+      await Promise.all([
+        window.fbSetDoc(myRef, { following: [...myFollowing, uid] }, { merge: true }),
+        window.fbSetDoc(theirRef, { followers: [...theirFollowers, me.uid] }, { merge: true })
+      ]);
+      toast('Seguindo! 🎉');
+    }
+    viewProfile(uid); // Refresh
+  } catch(e) {
+    toast('Erro: ' + e.message);
+  }
+}
+
+function openChatWith(uid) {
+  if (!uid || !window._fbUser) return;
+  document.getElementById('profile-modal').classList.remove('open');
+  const chatId = [window._fbUser.uid, uid].sort().join('_');
+  window._currentChatId = chatId;
+  window._currentChatUid = uid;
+  // Get name
+  window.fbGetDoc(window.fbDoc('profiles', uid)).then(snap => {
+    const name = snap.exists() ? (snap.data().name || 'Usuário') : 'Usuário';
+    document.getElementById('chat-with-name').textContent = name;
+  });
+  document.getElementById('chat-msgs').innerHTML = '<div class="empty" style="padding:16px"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>';
+  document.getElementById('chat-modal').classList.add('open');
+  // Load messages with real-time listener
+  if (_chatUnsub) _chatUnsub();
+  try {
+    const msgsRef = window.fbCollection('chats/' + chatId + '/messages');
+    const q = window.fbQuery(msgsRef, window.fbOrderBy('createdAt', 'asc'), window.fbLimit(50));
+    _chatUnsub = window.fbOnSnapshot(q, (snap) => {
+      const box = document.getElementById('chat-msgs');
+      if (!box) return;
+      const msgs = [];
+      snap.forEach(d => msgs.push(d.data()));
+      if (!msgs.length) {
+        box.innerHTML = '<div class="empty" style="padding:16px"><i class="ti ti-message"></i>Nenhuma mensagem ainda.</div>';
+        return;
+      }
+      box.innerHTML = msgs.map(m => {
+        const isMe = m.uid === window._fbUser?.uid;
+        return '<div style="display:flex;justify-content:' + (isMe?'flex-end':'flex-start') + '">'
+          + '<div style="max-width:75%;padding:8px 12px;border-radius:' + (isMe?'10px 10px 3px 10px':'10px 10px 10px 3px') + ';background:' + (isMe?'color-mix(in srgb,var(--acc) 16%,transparent)':'var(--bg3)') + ';border:1px solid ' + (isMe?'color-mix(in srgb,var(--acc) 25%,transparent)':'var(--bg4)') + ';font-size:12px;color:var(--txt0);line-height:1.55">'
+          + m.text
+          + '<div style="font-size:8px;color:var(--txt3);margin-top:3px;text-align:right">' + (m.time||'') + '</div>'
+          + '</div></div>';
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    });
+  } catch(e) {
+    document.getElementById('chat-msgs').innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro ao carregar chat.</div>';
+  }
+}
+
+async function sendChatMsg() {
+  const inp = document.getElementById('chat-inp-msg');
+  const text = inp.value.trim();
+  if (!text || !window._currentChatId || !window._fbUser) return;
+  inp.value = '';
+  const me = window._fbUser;
+  try {
+    const msgsRef = window.fbCollection('chats/' + window._currentChatId + '/messages');
+    await window.fbAddDoc(msgsRef, {
+      text,
+      uid: me.uid,
+      name: me.displayName || me.email.split('@')[0],
+      time: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}),
+      createdAt: Date.now()
+    });
+  } catch(e) {
+    toast('Erro ao enviar mensagem');
+  }
+}
+
+// ── ADD SOCIAL NAV ──
+async function loadPeople() {
+  const el = document.getElementById('people-list');
+  if (!el || !window._fbUser) return;
+  el.innerHTML = '<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';
+  try {
+    const snap = await window.fbGetDocs(window.fbCollection('profiles'));
+    const people = [];
+    snap.forEach(d => people.push(d.data()));
+    const others = people.filter(p => p.uid !== window._fbUser.uid);
+    if (!others.length) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-users"></i>Nenhum outro criador ainda. Convide amigos!</div>';
+      return;
+    }
+    el.innerHTML = others.map(p => '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bg3);cursor:pointer" onclick="openProfile(event)" data-uid="' + p.uid + '">'
+      + '<div style="width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--acc) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">'
+      + (p.photo ? '<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">' : '<i class="ti ti-user" style="font-size:16px;color:var(--acc2)"></i>')
+      + '</div>'
+      + '<div style="flex:1"><div style="font-size:12px;color:var(--txt1);font-weight:500">' + (p.name||'Usuário') + '</div>'
+      + (p.channel ? '<div style="font-size:9px;color:var(--acc)">' + p.channel + '</div>' : '')
+      + (p.bio ? '<div style="font-size:10px;color:var(--txt2)">' + p.bio + '</div>' : '')
+      + '</div>'
+      + '<div style="font-size:9px;color:var(--txt2);text-align:right">'
+      + '<div>' + (p.followers||[]).length + ' seg.</div>'
+      + '</div>'
+      + '</div>'
+    ).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro ao carregar: ' + e.message + '</div>';
+  }
+}
 
 // ── AUTH FUNCTIONS ──
 function showRegister(){
