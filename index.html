@@ -317,18 +317,11 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 /* ── RESPONSIVE MOBILE ── */
 @media(max-width:768px){
   body{flex-direction:column}
-  .sb{width:100%;height:52px;flex-direction:row;padding:0 12px;border-right:none;border-bottom:1px solid var(--bg3);overflow-x:auto}
-  .sb.open{width:100%;height:52px;flex-direction:row}
-  .sb-logo{margin-bottom:0;margin-right:8px}
-  .sb-lbl{display:none!important}
-  .sb-sep{width:1px;height:24px;margin:0 4px}
-  .ni{width:36px;height:36px;flex-shrink:0}
-  .ni span{display:none!important}
-  .ni.act::before{display:none}
-  .sb-btm{margin-top:0;flex-direction:row;padding:0}
-  .av-sb .avname{display:none!important}
-  .sb.open .av-sb{width:36px;height:36px;border-radius:50%;padding:0;justify-content:center}
-  .tb-tog{display:none}
+  /* Hide desktop sidebar */
+  .sb{display:none}
+  /* Show mobile bottom nav */
+  .mobile-nav{display:flex!important}
+  .main{flex:1;min-height:0;padding-bottom:56px}
   .g2{grid-template-columns:1fr}
   .g3{grid-template-columns:1fr 1fr}
   .cal-sb{display:none}
@@ -339,11 +332,46 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   .frow{flex-wrap:wrap}
   .frow .fin{min-width:0;width:100%}
   .mg2{grid-template-columns:1fr}
+  .mbox{width:calc(100vw - 24px);padding:14px}
 }
 @media(max-width:480px){
   .g3{grid-template-columns:1fr}
-  .mbox{width:calc(100vw - 20px);padding:14px}
 }
+
+/* ── MOBILE BOTTOM NAV ── */
+.mobile-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  height:56px;background:var(--bg1);
+  border-top:1px solid var(--bg3);
+  z-index:50;align-items:center;
+  justify-content:space-around;padding:0 4px;
+}
+.mn-item{
+  display:flex;flex-direction:column;align-items:center;
+  gap:3px;cursor:pointer;color:var(--txt2);
+  transition:color .15s;padding:4px 8px;border-radius:8px;
+  flex:1;justify-content:center;
+}
+.mn-item.act{color:var(--acc2)}
+.mn-item i{font-size:20px}
+.mn-item span{font-size:8px;letter-spacing:.02em}
+.mn-more-menu{
+  position:fixed;bottom:56px;left:0;right:0;
+  background:var(--bg1);border-top:1px solid var(--bg3);
+  padding:12px;display:none;flex-wrap:wrap;gap:8px;
+  z-index:49;animation:fadeSlideIn .2s ease;
+}
+.mn-more-menu.open{display:flex}
+.mn-more-item{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;border-radius:9px;
+  background:var(--bg2);border:1px solid var(--bg3);
+  cursor:pointer;color:var(--txt1);font-size:12px;
+  transition:all .15s;flex:1;min-width:calc(50% - 4px);
+}
+.mn-more-item:hover{border-color:var(--acc);color:var(--acc2)}
+.mn-more-item i{font-size:16px;color:var(--acc)}
 
 /* ── MODAL ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(3px)}
@@ -526,7 +554,41 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 </div>
 
 <!-- APP SCREEN -->
-<div id="app-screen" style="display:flex;flex:1;overflow:hidden">
+<div id="app-screen" style="display:flex;flex:1;overflow:hidden;flex-direction:column;position:relative">
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav" id="mobile-nav">
+  <div class="mn-item act" data-p="dash" onclick="go('dash');setMobileActive(this)">
+    <i class="ti ti-layout-dashboard"></i><span>Painel</span>
+  </div>
+  <div class="mn-item" data-p="tasks" onclick="go('tasks');setMobileActive(this)">
+    <i class="ti ti-checks"></i><span>Tarefas</span>
+  </div>
+  <div class="mn-item" data-p="cal" onclick="go('cal');setMobileActive(this)">
+    <i class="ti ti-calendar-event"></i><span>Agenda</span>
+  </div>
+  <div class="mn-item" data-p="ai" onclick="go('ai');setMobileActive(this)">
+    <i class="ti ti-message-bolt"></i><span>IA</span>
+  </div>
+  <div class="mn-item" onclick="toggleMoreMenu(this)">
+    <i class="ti ti-dots"></i><span>Mais</span>
+  </div>
+</div>
+
+<!-- MOBILE MORE MENU -->
+<div class="mn-more-menu" id="mn-more-menu">
+  <div class="mn-more-item" onclick="go('recs');closeMoreMenu()"><i class="ti ti-video-plus"></i>Gravações</div>
+  <div class="mn-more-item" onclick="go('yt');closeMoreMenu()"><i class="ti ti-brand-youtube"></i>YouTube</div>
+  <div class="mn-more-item" onclick="go('monetization');closeMoreMenu()"><i class="ti ti-coin"></i>Monetização</div>
+  <div class="mn-more-item" onclick="go('shorts');closeMoreMenu()"><i class="ti ti-device-mobile"></i>Shorts</div>
+  <div class="mn-more-item" onclick="go('history');closeMoreMenu()"><i class="ti ti-chart-line"></i>Histórico</div>
+  <div class="mn-more-item" onclick="go('checklist');closeMoreMenu()"><i class="ti ti-list-check"></i>Checklist</div>
+  <div class="mn-more-item" onclick="go('squad');closeMoreMenu()"><i class="ti ti-users-group"></i>Squad</div>
+  <div class="mn-more-item" onclick="go('feedback');closeMoreMenu()"><i class="ti ti-message-star"></i>Feedback</div>
+  <div class="mn-more-item" onclick="go('settings');closeMoreMenu()"><i class="ti ti-adjustments-horizontal"></i>Config</div>
+</div>
+
+<div style="display:flex;flex:1;overflow:hidden">
 <nav class="sb" id="sb">
   <div class="sb-logo" onclick="toggleSb()"><i class="ti ti-video"></i></div>
   <div class="sb-lbl">Principal</div>
@@ -545,6 +607,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   <div class="ni" data-p="history" onclick="go('history')"><i class="ti ti-chart-line"></i><span>Histórico</span></div>
   <div class="ni" data-p="checklist" onclick="go('checklist')"><i class="ti ti-list-check"></i><span>Checklist</span></div>
   <div class="ni" data-p="squad" onclick="go('squad')"><i class="ti ti-users-group"></i><span>Squad</span></div>
+  <div class="ni" data-p="feedback" onclick="go('feedback')"><i class="ti ti-message-star"></i><span>Feedback</span></div>
   <div class="sb-sep"></div>
   <div class="sb-btm">
     <div class="ni" data-p="settings" onclick="go('settings')"><i class="ti ti-adjustments-horizontal"></i><span>Configurações</span></div>
@@ -885,6 +948,36 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
     </div>
   </section>
 
+  <!-- FEEDBACK -->
+  <section class="pg" id="pg-feedback">
+    <div class="scr" style="max-width:680px;margin:0 auto;width:100%">
+      <div class="card" style="background:var(--bg2)">
+        <div class="card-h"><span class="card-lbl">Deixe seu feedback</span></div>
+        <p style="font-size:12px;color:var(--txt1);line-height:1.7;margin-bottom:12px">Sua opinião ajuda a melhorar o Creator Hub. Mande sugestões, reporte bugs ou compartilhe ideias!</p>
+        <div style="margin-bottom:10px">
+          <label style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px">Tipo</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap" id="fb-type-row">
+            <div class="tp on" data-ft="suggestion" onclick="setFbType(this)">💡 Sugestão</div>
+            <div class="tp" data-ft="bug" onclick="setFbType(this)">🐛 Bug</div>
+            <div class="tp" data-ft="idea" onclick="setFbType(this)">✨ Ideia nova</div>
+            <div class="tp" data-ft="compliment" onclick="setFbType(this)">❤️ Elogio</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:4px">Mensagem</label>
+          <textarea class="fin" id="fb-msg" placeholder="Escreva aqui..." rows="4" style="width:100%;resize:none"></textarea>
+        </div>
+        <button class="btn-a" onclick="submitFeedback()"><i class="ti ti-send-2"></i>Enviar feedback</button>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-lbl">Feedbacks da comunidade</span><span class="card-lnk" onclick="loadFeedbacks()">atualizar</span></div>
+        <div id="fb-list"><div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda. Seja o primeiro!</div></div>
+      </div>
+    </div>
+  </section>
+
+
+</div><!-- /inner flex -->
 </div><!-- /app-screen -->
 
 <script>
@@ -1089,7 +1182,7 @@ const THEMES=[
   {id:'aurum',n:'Aurum',a:'#0d0c08',b:'#d4af37'},
   {id:'noir',n:'Noir',a:'#080808',b:'#e0e0e0'},
 ];
-const PAGES={dash:'Painel',tasks:'Tarefas',recs:'Gravações',cal:'Calendário',ai:'Assistente IA',yt:'YouTube Studio',settings:'Configurações',monetization:'Monetização',shorts:'Shorts',history:'Histórico de Crescimento',checklist:'Checklist de Publicação',squad:'Squad'};
+const PAGES={dash:'Painel',tasks:'Tarefas',recs:'Gravações',cal:'Calendário',ai:'Assistente IA',yt:'YouTube Studio',settings:'Configurações',monetization:'Monetização',shorts:'Shorts',history:'Histórico de Crescimento',checklist:'Checklist de Publicação',squad:'Squad',feedback:'Feedback'};
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DOWS_F=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -2007,7 +2100,11 @@ function go(p) {
   if(p==='history')renderHistory();
   if(p==='checklist')renderChecklist();
   if(p==='squad')renderSquad();
+  if(p==='feedback'){loadFeedbacks();}
   if(p==='yt'){renderYT();setTimeout(()=>{renderDashYT();renderMonetization();},500);}
+  // Update mobile nav
+  document.querySelectorAll('.mn-item[data-p]').forEach(i=>i.classList.toggle('act',i.dataset.p===p));
+  if(typeof closeMoreMenu==='function')closeMoreMenu();
 }
 
 // ── UPDATE addTask TO SYNC CALENDAR ──
@@ -2016,7 +2113,111 @@ const _origAddTask = addTask;
 // ── PATCH loadUserData TO LOAD SHORTS ──
 const _origLoadUserData = window.loadUserData;
 
-// ── AUTH FUNCTIONS ──// ── AUTH FUNCTIONS ──
+// ── FEEDBACK ──
+let currentFbType = 'suggestion';
+function setFbType(el) {
+  currentFbType = el.dataset.ft;
+  document.querySelectorAll('#fb-type-row .tp').forEach(t => t.classList.toggle('on', t === el));
+}
+
+async function submitFeedback() {
+  const msg = document.getElementById('fb-msg').value.trim();
+  if (!msg) { toast('Escreva uma mensagem primeiro'); return; }
+  if (!window._fbFns || !window._fbDb) { toast('Conecte-se para enviar feedback'); return; }
+  try {
+    const user = window._fbUser;
+    const fb = {
+      type: currentFbType,
+      message: msg,
+      author: user ? (user.displayName || user.email.split('@')[0]) : 'Anônimo',
+      uid: user ? user.uid : 'anon',
+      createdAt: Date.now(),
+      date: new Date().toLocaleDateString('pt-BR')
+    };
+    const fns = window._fbFns;
+    await fns.setDoc(fns.doc(window._fbDb, 'feedbacks', Date.now() + '_' + (user?.uid||'anon')), fb);
+    document.getElementById('fb-msg').value = '';
+    toast('Feedback enviado! Obrigado 💛');
+    loadFeedbacks();
+  } catch(e) {
+    toast('Erro ao enviar. Tente novamente.');
+    console.error(e);
+  }
+}
+
+async function loadFeedbacks() {
+  const el = document.getElementById('fb-list');
+  if (!el) return;
+  if (!window._fbFns || !window._fbDb) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-messages"></i>Faça login para ver feedbacks.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';
+  try {
+    const fns = window._fbFns;
+    const snap = await getDocs_compat();
+    if (!snap) return;
+  } catch(e) {
+    // Fallback: use getDocs directly
+    try {
+      const fns = window._fbFns;
+      const ref = fns.collection(window._fbDb, 'feedbacks');
+      const snap = await fns.getDocs(ref);
+      const items = [];
+      snap.forEach(doc => items.push(doc.data()));
+      items.sort((a,b) => b.createdAt - a.createdAt);
+      if (!items.length) {
+        el.innerHTML = '<div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda. Seja o primeiro!</div>';
+        return;
+      }
+      const typeLabel = {suggestion:'💡 Sugestão', bug:'🐛 Bug', idea:'✨ Ideia', compliment:'❤️ Elogio'};
+      el.innerHTML = items.map(fb => '<div class="trow" style="align-items:flex-start;gap:10px;padding:10px 0">'
+        + '<div style="width:32px;height:32px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-user" style="font-size:14px;color:var(--acc2)"></i></div>'
+        + '<div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+        + '<span style="font-size:12px;color:var(--txt1);font-weight:500">' + fb.author + '</span>'
+        + '<span style="font-size:9px;padding:1px 7px;border-radius:20px;background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc2)">' + (typeLabel[fb.type]||fb.type) + '</span>'
+        + '<span style="font-size:9px;color:var(--txt3);margin-left:auto">' + fb.date + '</span>'
+        + '</div>'
+        + '<div style="font-size:12px;color:var(--txt1);line-height:1.65">' + fb.message + '</div>'
+        + '</div></div>'
+      ).join('');
+    } catch(e2) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro ao carregar feedbacks.</div>';
+    }
+  }
+}
+
+async function getDocs_compat() { return null; } // placeholder
+
+// ── MOBILE NAV ──
+function setMobileActive(el) {
+  document.querySelectorAll('.mn-item').forEach(i => i.classList.remove('act'));
+  el.classList.add('act');
+  closeMoreMenu();
+}
+function toggleMoreMenu(el) {
+  const menu = document.getElementById('mn-more-menu');
+  const isOpen = menu.classList.contains('open');
+  menu.classList.toggle('open', !isOpen);
+  el.classList.toggle('act', !isOpen);
+}
+function closeMoreMenu() {
+  document.getElementById('mn-more-menu')?.classList.remove('open');
+}
+
+
+
+// ── AUTH FUNCTIONS ──// ── FEEDBACK ──
+currentFbType = 'suggestion';
+
+
+
+
+// ── MOBILE NAV ──
+
+
+
+// ── AUTH FUNCTIONS ──
 function showRegister(){
   document.getElementById('form-login').style.display='none';
   document.getElementById('form-register').style.display='flex';
