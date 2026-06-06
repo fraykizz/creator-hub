@@ -880,13 +880,20 @@ function saveProfile(){
 }
 function saveKey(){
   const k=document.getElementById('s-key').value.trim();
-  if(!k){toast('Cole uma chave válida');return}
+  if(!k||k==='••••••••••••••••••••'){toast('Cole sua chave sk-or-... no campo');return}
+  if(!k.startsWith('sk-or-')){
+    toast('Chave inválida. Deve começar com sk-or-');
+    return;
+  }
+  localStorage.removeItem('ch_key');
   localStorage.setItem('ch_key',k);
+  document.getElementById('s-key').value='••••••••••••••••••••';
   toast('Chave salva! A IA já está funcionando.');
 }
 function loadSettingsKey(){
   const k=localStorage.getItem('ch_key')||'';
-  document.getElementById('s-key').value=k?'••••••••••••••••••••':'';
+  const el=document.getElementById('s-key');
+  if(el){el.value=k?'••••••••••••••••••••':'';el.placeholder=k?'Chave salva (cole novamente para trocar)':'Cole sua chave sk-or-...';}
 }
 function clearData(){
   if(!confirm('Apagar todas as tarefas, gravações e eventos?'))return;
