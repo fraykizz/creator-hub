@@ -855,7 +855,7 @@ async function ask(msg){
         'X-Title':'Creator Hub'
       },
       body:JSON.stringify({
-        model:'sourceful/riverflow-v2.5-fast:free',
+        model:'deepseek/deepseek-r1:free',
         messages,
         max_tokens:800,
         temperature:0.7
@@ -865,7 +865,11 @@ async function ask(msg){
     clearInterval(timer);
     const data=await res.json();
     if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
-    const reply=data.choices?.[0]?.message?.content||'Não consegui processar. Tente novamente.';
+    // Tenta extrair resposta de diferentes formatos
+    const choice=data.choices?.[0];
+    const reply=choice?.message?.content||choice?.text||choice?.content
+      ||(typeof choice==='string'?choice:null)
+      ||'Não consegui processar. Tente novamente.';
     aiHist.push({role:'assistant',content:reply});
     lr.remove();
     appendMsg(reply,'ai');
