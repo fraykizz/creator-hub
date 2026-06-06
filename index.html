@@ -520,25 +520,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 
   <!-- YOUTUBE -->
   <section class="pg" id="pg-yt">
-    <div class="scr">
-      <div class="g3">
-        <div class="met"><div class="mval">4.820</div><div class="mlbl">Visualizações</div><div class="mchg up">↑ 18%</div><div class="mbar"><div class="mfill" style="width:72%"></div></div></div>
-        <div class="met"><div class="mval">312</div><div class="mlbl">Inscritos novos</div><div class="mchg up">↑ 7%</div><div class="mbar"><div class="mfill" style="width:45%"></div></div></div>
-        <div class="met"><div class="mval">6:42</div><div class="mlbl">Tempo médio</div><div class="mchg dn">↓ 4%</div><div class="mbar"><div class="mfill" style="width:36%;background:var(--red)"></div></div></div>
-        <div class="met"><div class="mval">8.4%</div><div class="mlbl">CTR thumbnail</div><div class="mchg up">↑ 1.2%</div><div class="mbar"><div class="mfill" style="width:55%"></div></div></div>
-        <div class="met"><div class="mval">1.24k</div><div class="mlbl">Horas assistidas</div><div class="mchg up">↑ 22%</div><div class="mbar"><div class="mfill" style="width:66%"></div></div></div>
-        <div class="met"><div class="mval">2.1k</div><div class="mlbl">Impressões</div><div class="mchg dn">↓ 2%</div><div class="mbar"><div class="mfill" style="width:30%;background:var(--red)"></div></div></div>
-      </div>
-      <div class="card">
-        <div class="card-h"><span class="card-lbl">Análise IA</span><span class="card-lnk" onclick="go('ai');setTimeout(()=>ask('analisar canal'),250)">aprofundar →</span></div>
-        <div class="yt-ins">Seu <strong>CTR de 8.4%</strong> está muito acima da média do YouTube (2–5%) — suas thumbnails estão funcionando. O ponto de atenção é o <strong>tempo médio assistido</strong>, que caiu 4%. Considere adicionar capítulos e revisar o ritmo de edição após os 8 minutos.</div>
-      </div>
-      <div class="card">
-        <div class="card-h"><span class="card-lbl">Vídeos recentes</span></div>
-        <div class="rrow"><div class="rthumb" style="background:color-mix(in srgb,var(--green) 12%,var(--bg3))"><i class="ti ti-player-play" style="color:var(--green)"></i><div class="rprog" style="width:100%"></div></div><div style="flex:1"><div class="rname">Episódio 11</div><div class="rmeta">18 min · 1.2k views · 62% ret.</div></div><div class="stag s-pub">Publicado</div></div>
-        <div class="rrow"><div class="rthumb"><i class="ti ti-player-play"></i><div class="rprog" style="width:100%"></div></div><div style="flex:1"><div class="rname">Short — Dica rápida</div><div class="rmeta">52s · 3.4k views · 78% ret.</div></div><div class="stag s-pub">Publicado</div></div>
-      </div>
-    </div>
+    <div class="scr"></div>
   </section>
 
   <!-- CONFIGURAÇÕES -->
@@ -608,6 +590,195 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 <div class="toast" id="toast"></div>
 
 <script>
+// ── YOUTUBE OAuth ──
+const YT_CLIENT_ID = '274685923204-85icfr5c5qpnr87la0cv312uoo28celu.apps.googleusercontent.com';
+const YT_SCOPE = 'https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly';
+let ytToken = localStorage.getItem('yt_token') || null;
+let ytChannel = JSON.parse(localStorage.getItem('yt_channel') || 'null');
+
+function ytLogin() {
+  const params = new URLSearchParams({
+    client_id: YT_CLIENT_ID,
+    redirect_uri: window.location.origin + window.location.pathname,
+    response_type: 'token',
+    scope: YT_SCOPE,
+    include_granted_scopes: 'true',
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+}
+
+function ytLogout() {
+  ytToken = null; ytChannel = null;
+  localStorage.removeItem('yt_token');
+  localStorage.removeItem('yt_channel');
+  renderYT();
+  toast('Desconectado do YouTube');
+}
+
+async function ytFetch(url) {
+  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + ytToken } });
+  if (res.status === 401) { ytLogout(); throw new Error('Token expirado'); }
+  return res.json();
+}
+
+async function loadYTData() {
+  try {
+    // Channel info
+    const ch = await ytFetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true');
+    if (!ch.items || !ch.items.length) throw new Error('Canal não encontrado');
+    ytChannel = {
+      name: ch.items[0].snippet.title,
+      thumb: ch.items[0].snippet.thumbnails?.default?.url,
+      subs: parseInt(ch.items[0].statistics.subscriberCount || 0),
+      views: parseInt(ch.items[0].statistics.viewCount || 0),
+      videos: parseInt(ch.items[0].statistics.videoCount || 0),
+      id: ch.items[0].id,
+    };
+    localStorage.setItem('yt_channel', JSON.stringify(ytChannel));
+
+    // Recent videos
+    const vids = await ytFetch(
+      'https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=' + ytChannel.id +
+      '&maxResults=6&order=date&type=video'
+    );
+    ytChannel.recentVideos = (vids.items || []).map(v => ({
+      id: v.id.videoId,
+      title: v.snippet.title,
+      thumb: v.snippet.thumbnails?.medium?.url,
+      published: v.snippet.publishedAt,
+    }));
+
+    // Video stats
+    if (ytChannel.recentVideos.length) {
+      const ids = ytChannel.recentVideos.map(v => v.id).join(',');
+      const stats = await ytFetch(
+        'https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=' + ids
+      );
+      (stats.items || []).forEach(item => {
+        const v = ytChannel.recentVideos.find(x => x.id === item.id);
+        if (v) {
+          v.views = parseInt(item.statistics.viewCount || 0);
+          v.likes = parseInt(item.statistics.likeCount || 0);
+          v.comments = parseInt(item.statistics.commentCount || 0);
+          v.duration = item.contentDetails.duration;
+        }
+      });
+    }
+
+    localStorage.setItem('yt_channel', JSON.stringify(ytChannel));
+    renderYT();
+    toast('Canal conectado: ' + ytChannel.name);
+  } catch(e) {
+    console.error(e);
+    toast('Erro ao carregar dados do YouTube');
+    renderYT();
+  }
+}
+
+function formatNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'k';
+  return n.toString();
+}
+
+function formatDuration(iso) {
+  if (!iso) return '';
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!m) return '';
+  const h = parseInt(m[1]||0), min = parseInt(m[2]||0), s = parseInt(m[3]||0);
+  if (h > 0) return h + ':' + String(min).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  return min + ':' + String(s).padStart(2,'0');
+}
+
+function renderYT() {
+  const pg = document.getElementById('pg-yt');
+  if (!pg) return;
+  const scr = pg.querySelector('.scr');
+  if (!scr) return;
+
+  if (!ytToken) {
+    scr.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:20px;padding:40px">
+        <div style="width:64px;height:64px;border-radius:50%;background:color-mix(in srgb,var(--red) 15%,transparent);border:1px solid color-mix(in srgb,var(--red) 25%,transparent);display:flex;align-items:center;justify-content:center">
+          <i class="ti ti-brand-youtube" style="font-size:28px;color:#d86060"></i>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:var(--serif);font-size:20px;font-style:italic;color:var(--txt0);margin-bottom:6px">Conecte seu canal</div>
+          <div style="font-size:12px;color:var(--txt2);line-height:1.6;max-width:280px">Faça login com sua conta do Google para ver as métricas reais do seu canal em tempo real.</div>
+        </div>
+        <button onclick="ytLogin()" style="background:#d86060;color:#fff;border:none;border-radius:9px;padding:12px 28px;font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .18s" onmouseover="this.style.background='#e07070'" onmouseout="this.style.background='#d86060'">
+          <i class="ti ti-brand-youtube" style="font-size:16px"></i>Conectar com YouTube
+        </button>
+      </div>`;
+    return;
+  }
+
+  if (!ytChannel) {
+    scr.innerHTML = `<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando dados do canal...</div>
+    <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>`;
+    loadYTData();
+    return;
+  }
+
+  // Render real data
+  const vidsHTML = (ytChannel.recentVideos || []).map(v => `
+    <div class="rrow" style="align-items:flex-start;gap:10px">
+      <img src="${v.thumb||''}" style="width:80px;height:45px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--bg3)">
+      <div style="flex:1;min-width:0">
+        <div class="rname" style="white-space:normal;line-height:1.4">${v.title}</div>
+        <div class="rmeta" style="margin-top:3px;display:flex;gap:10px">
+          <span><i class="ti ti-eye" style="font-size:10px"></i> ${formatNum(v.views||0)}</span>
+          <span><i class="ti ti-heart" style="font-size:10px"></i> ${formatNum(v.likes||0)}</span>
+          <span><i class="ti ti-message" style="font-size:10px"></i> ${formatNum(v.comments||0)}</span>
+          ${v.duration ? '<span><i class="ti ti-clock" style="font-size:10px"></i> '+formatDuration(v.duration)+'</span>' : ''}
+        </div>
+      </div>
+    </div>`).join('');
+
+  scr.innerHTML = `
+    <div class="card" style="background:var(--bg2)">
+      <div style="display:flex;align-items:center;gap:12px">
+        ${ytChannel.thumb ? '<img src="'+ytChannel.thumb+'" style="width:48px;height:48px;border-radius:50%;border:2px solid var(--bg4)">' : '<div style="width:48px;height:48px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center"><i class="ti ti-user" style="font-size:22px;color:var(--txt2)"></i></div>'}
+        <div style="flex:1">
+          <div style="font-family:var(--serif);font-size:17px;font-style:italic;color:var(--txt0)">${ytChannel.name}</div>
+          <div style="font-size:10px;color:var(--txt2);margin-top:2px">${formatNum(ytChannel.subs)} inscritos · ${formatNum(ytChannel.videos)} vídeos</div>
+        </div>
+        <button onclick="loadYTData()" style="background:transparent;border:1px solid var(--bg4);color:var(--txt2);border-radius:7px;padding:5px 10px;font-size:10px;cursor:pointer;font-family:var(--sans);transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc2)'" onmouseout="this.style.borderColor='var(--bg4)';this.style.color='var(--txt2)'">
+          <i class="ti ti-refresh" style="font-size:12px"></i>Atualizar
+        </button>
+        <button onclick="ytLogout()" style="background:transparent;border:1px solid var(--bg4);color:var(--txt2);border-radius:7px;padding:5px 10px;font-size:10px;cursor:pointer;font-family:var(--sans);transition:all .15s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--bg4)';this.style.color='var(--txt2)'">
+          Desconectar
+        </button>
+      </div>
+    </div>
+    <div class="g3">
+      <div class="met"><div class="mval">${formatNum(ytChannel.subs)}</div><div class="mlbl">Inscritos totais</div><div class="mbar"><div class="mfill" style="width:60%"></div></div></div>
+      <div class="met"><div class="mval">${formatNum(ytChannel.views)}</div><div class="mlbl">Views totais</div><div class="mbar"><div class="mfill" style="width:75%"></div></div></div>
+      <div class="met"><div class="mval">${ytChannel.videos}</div><div class="mlbl">Vídeos publicados</div><div class="mbar"><div class="mfill" style="width:45%"></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="card-lbl">Vídeos recentes</span><span class="card-lnk" onclick="go('ai');setTimeout(()=>ask('analisar canal'),200)">análise IA →</span></div>
+      ${vidsHTML || '<div class="empty"><i class="ti ti-video-off"></i>Nenhum vídeo encontrado</div>'}
+    </div>`;
+}
+
+// Check for OAuth token in URL hash on page load
+function checkOAuthCallback() {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    if (token) {
+      ytToken = token;
+      localStorage.setItem('yt_token', token);
+      // Clean URL
+      history.replaceState(null, '', window.location.pathname);
+      toast('YouTube conectado! Carregando dados...');
+      go('yt');
+    }
+  }
+}
+
 // ── TEMAS ──
 const THEMES=[
   {id:'',n:'Obsidian',a:'#0f0f10',b:'#c8a96e'},
@@ -961,6 +1132,8 @@ function loadProfile(){
 loadProfile();
 renderDTasks();
 renderDRecs();
+checkOAuthCallback();
+renderYT();
 </script>
 </body>
 </html>
