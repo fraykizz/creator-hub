@@ -319,6 +319,17 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 .mn-more-item i{font-size:16px;color:var(--acc)}
 /* AUTH */
 #auth-screen{transition:opacity .3s}
+
+/* LICENSE */
+.locked-overlay{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:10;border-radius:12px}
+.lock-icon{width:52px;height:52px;border-radius:50%;background:var(--bg3);border:2px solid var(--bg4);display:flex;align-items:center;justify-content:center}
+.lock-icon i{font-size:22px;color:var(--txt2)}
+.lock-text{font-family:var(--serif);font-size:15px;font-style:italic;color:var(--txt1);text-align:center}
+.lock-sub{font-size:11px;color:var(--txt2);text-align:center;line-height:1.6;max-width:220px}
+.lock-btn{background:var(--acc);color:var(--bg);border:none;border-radius:8px;padding:8px 18px;font-size:11px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .18s}
+.lock-btn:hover{background:var(--acc2);transform:translateY(-1px)}
+.ni .lock-dot{width:7px;height:7px;border-radius:50%;background:var(--red);position:absolute;top:5px;right:5px;display:none}
+.ni.locked .lock-dot{display:block}
 </style>
 <!-- Firebase -->
 <script type="module">
@@ -624,6 +635,16 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
         </div>
       </div>
       <div class="card"><div class="card-h"><span class="card-lbl">Aparência</span></div><div class="th-grid" id="th-grid"></div></div>
+      <div class="card">
+        <div class="card-h"><span class="card-lbl" id="lic-label">Chave de acesso</span><span id="lic-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--bg3);color:var(--txt2)">Sem chave</span></div>
+        <p style="font-size:11px;color:var(--txt2);line-height:1.6;margin-bottom:10px" id="lic-info">Cole sua chave de acesso para desbloquear o Creator Hub.</p>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input class="fin" id="lic-inp" type="password" placeholder="Cole sua chave aqui..." style="flex:1">
+          <button class="btn-a" onclick="activateLicense()"><i class="ti ti-key"></i>Ativar</button>
+        </div>
+        <div id="lic-details" style="display:none;font-size:10px;color:var(--green);margin-bottom:10px"></div>
+        <button class="danger-btn" id="lic-remove-btn" style="display:none" onclick="removeLicense()"><i class="ti ti-key-off" style="font-size:12px;margin-right:5px"></i>Remover chave</button>
+      </div>
       <div class="card">
         <div class="card-h"><span class="card-lbl">Dados</span></div>
         <p style="font-size:11.5px;color:var(--txt2);line-height:1.65;margin-bottom:12px">Seus dados sincronizam entre dispositivos via Firebase quando logado.</p>
@@ -1034,8 +1055,165 @@ async function doLogin(){const email=document.getElementById('l-email').value.tr
 async function doReg(){const name=document.getElementById('r-name').value.trim();const email=document.getElementById('r-email').value.trim();const pass=document.getElementById('r-pass').value;if(!name||!email||!pass){authErr('auth-err2','Preencha todos os campos');return}try{await window.fbRegister(email,pass,name)}catch(e){authErr('auth-err2',friendlyErr(e.code))}}
 document.getElementById('l-email').onkeydown=e=>{if(e.key==='Enter')doLogin()};
 
+// ── LICENSE SYSTEM ──
+const LICENSED_PAGES = ['tasks','recs','cal','ai','yt','monetization','shorts','history','checklist','squad','chat','people','feedback'];
+const SITE_URL = 'https://seusite.com'; // Troque pelo seu site quando criar
+
+// ── COLE SUA SENHA SECRETA AQUI (mesma do Gerador.py) ──
+const APP_SECRET = 'COLE_SUA_SENHA_AQUI';
+// ────────────────────────────────────────────────────────
+
+async function hmacSign(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkLicense() {
+  const raw = localStorage.getItem('ch_license');
+  if (!raw) return { valid: false, reason: 'no_key' };
+  try {
+    const parts = raw.split('.');
+    if (parts.length !== 2) return { valid: false, reason: 'invalid' };
+    const [payload, sig] = parts;
+    // Verify HMAC signature
+    const expectedSig = await hmacSign(APP_SECRET, payload);
+    if (sig !== expectedSig) return { valid: false, reason: 'invalid' };
+    const decoded = JSON.parse(atob(payload));
+    if (!decoded.exp) return { valid: false, reason: 'invalid' };
+    const now = Date.now();
+    if (decoded.exp !== 9999999999999 && now > decoded.exp) {
+      return { valid: false, reason: 'expired' };
+    }
+    return { valid: true, exp: decoded.exp };
+  } catch(e) {
+    return { valid: false, reason: 'invalid' };
+  }
+}
+
+function getDaysLeft(exp) {
+  if (exp === 9999999999999) return null; // ilimitado
+  const diff = exp - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+async function applyLicenseState() {
+  const lic = await checkLicense();
+  const isValid = lic.valid;
+
+  // Update sidebar lock dots
+  document.querySelectorAll('.ni[data-p]').forEach(el => {
+    const p = el.dataset.p;
+    if (LICENSED_PAGES.includes(p)) {
+      el.classList.toggle('locked', !isValid);
+      let dot = el.querySelector('.lock-dot');
+      if (!dot) { dot = document.createElement('span'); dot.className = 'lock-dot'; el.appendChild(dot); }
+    }
+  });
+
+  // Update settings UI
+  const statusEl = document.getElementById('lic-status');
+  const infoEl = document.getElementById('lic-info');
+  const detailsEl = document.getElementById('lic-details');
+  const removeBtn = document.getElementById('lic-remove-btn');
+
+  if (statusEl) {
+    if (isValid) {
+      const daysLeft = getDaysLeft(lic.exp);
+      statusEl.textContent = daysLeft === null ? '✓ Ilimitado' : '✓ Ativo — ' + daysLeft + 'd restantes';
+      statusEl.style.background = 'color-mix(in srgb,var(--green) 16%,transparent)';
+      statusEl.style.color = 'var(--green)';
+      if (infoEl) infoEl.textContent = 'Sua chave está ativa. Para trocar, remova a atual e cole a nova.';
+      if (detailsEl) { detailsEl.style.display = 'block'; detailsEl.textContent = daysLeft === null ? '✓ Acesso ilimitado ativado' : '✓ Acesso válido por mais ' + daysLeft + ' dias'; }
+      if (removeBtn) removeBtn.style.display = 'block';
+    } else {
+      statusEl.textContent = lic.reason === 'expired' ? '⚠ Expirada' : 'Sem chave';
+      statusEl.style.background = lic.reason === 'expired' ? 'color-mix(in srgb,var(--amber) 16%,transparent)' : 'var(--bg3)';
+      statusEl.style.color = lic.reason === 'expired' ? 'var(--amber)' : 'var(--txt2)';
+      if (infoEl) infoEl.textContent = lic.reason === 'expired' ? 'Sua chave expirou. Adquira uma nova no nosso site.' : 'Cole sua chave de acesso para desbloquear o Creator Hub.';
+      if (detailsEl) detailsEl.style.display = 'none';
+      if (removeBtn) removeBtn.style.display = lic.reason === 'expired' ? 'block' : 'none';
+    }
+  }
+}
+
+async function activateLicense() {
+  const inp = document.getElementById('lic-inp');
+  const key = inp?.value?.trim();
+  if (!key) { toast('Cole sua chave no campo'); return; }
+  try {
+    const parts = key.split('.');
+    if (parts.length !== 2) { toast('Chave inválida. Verifique e tente novamente.'); return; }
+    const [payload, sig] = parts;
+    const expectedSig = await hmacSign(APP_SECRET, payload);
+    if (sig !== expectedSig) { toast('Chave inválida — assinatura incorreta.'); return; }
+    const decoded = JSON.parse(atob(payload));
+    if (!decoded.exp) { toast('Chave inválida.'); return; }
+    if (decoded.exp !== 9999999999999 && Date.now() > decoded.exp) {
+      toast('Esta chave já expirou!'); return;
+    }
+    localStorage.setItem('ch_license', key);
+    inp.value = '';
+    await applyLicenseState();  // async, runs in background
+    const days = getDaysLeft(decoded.exp);
+    toast(days === null ? '🎉 Acesso ilimitado ativado!' : '🎉 Acesso ativado por ' + days + ' dias!');
+  } catch(e) {
+    toast('Chave inválida. Verifique e tente novamente.');
+  }
+}
+
+function removeLicense() {
+  if (!confirm('Remover chave de acesso?')) return;
+  localStorage.removeItem('ch_license');
+  applyLicenseState();  // async, runs in background
+  toast('Chave removida');
+}
+
+// Override go() to check license before navigating
+const _goWithLicense = _goBase;
+function _goBase(p) {
+  if (LICENSED_PAGES.includes(p)) {
+    checkLicense().then(lic => {
+      if (!lic.valid) showLockScreen(p);
+      else _goBase(p);
+    });
+    return;
+  }
+  _goWithLicense(p);
+}
+
+function showLockScreen(p) {
+  // Navigate but show lock overlay
+  document.querySelectorAll('.pg').forEach(e => e.classList.remove('act'));
+  document.querySelectorAll('.ni[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+  const pg = document.getElementById('pg-' + p);
+  if (pg) {
+    pg.classList.add('act');
+    // Clear existing overlay
+    let overlay = pg.querySelector('.locked-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'locked-overlay';
+      pg.style.position = 'relative';
+      pg.appendChild(overlay);
+    }
+    const lic = null;
+    const isExpired = lic.reason === 'expired';
+    overlay.innerHTML = '<div class="lock-icon"><i class="ti ti-lock"></i></div>'
+      + '<div class="lock-text">' + (isExpired ? 'Sua chave expirou' : 'Acesso bloqueado') + '</div>'
+      + '<div class="lock-sub">' + (isExpired ? 'Renove sua chave de acesso para continuar usando o Creator Hub.' : 'Adquira uma chave de acesso no nosso site para desbloquear todas as funcionalidades.') + '</div>'
+      + '<button class="lock-btn" onclick="go(&quot;settings&quot;)"><i class="ti ti-key" style="font-size:12px;margin-right:5px"></i>' + (isExpired ? 'Renovar chave' : 'Inserir chave') + '</button>'
+      + '<a href="' + SITE_URL + '" target="_blank" style="font-size:10px;color:var(--acc);cursor:pointer;text-decoration:none;margin-top:4px">Adquirir acesso →</a>';
+  }
+  document.getElementById('pg-title').textContent = PAGES[p] || p;
+  document.querySelectorAll('.mn-item[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+  closeMore();
+}
+
 // INIT
 loadProfile();renderDTasks();renderDRecs();checkOAuth();renderDashYT();
+applyLicenseState();  // async, runs in background
 </script>
 </body>
 </html>
