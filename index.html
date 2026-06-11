@@ -321,7 +321,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 #auth-screen{transition:opacity .3s}
 
 /* LICENSE */
-.locked-overlay{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:10;border-radius:12px}
+.locked-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:90}
 .lock-icon{width:52px;height:52px;border-radius:50%;background:var(--bg3);border:2px solid var(--bg4);display:flex;align-items:center;justify-content:center}
 .lock-icon i{font-size:22px;color:var(--txt2)}
 .lock-text{font-family:var(--serif);font-size:15px;font-style:italic;color:var(--txt1);text-align:center}
@@ -1060,7 +1060,7 @@ const LICENSED_PAGES = ['tasks','recs','cal','ai','yt','monetization','shorts','
 const SITE_URL = 'https://seusite.com'; // Troque pelo seu site quando criar
 
 // ── COLE SUA SENHA SECRETA AQUI (mesma do Gerador.py) ──
-const APP_SECRET = 'COLE_SUA_SENHA_AQUI';
+const APP_SECRET = 'saillen.valverde20262K26L';
 // ────────────────────────────────────────────────────────
 
 async function hmacSign(secret, message) {
@@ -1184,31 +1184,30 @@ function _goBase(p) {
 }
 
 function showLockScreen(p) {
-  // Navigate but show lock overlay
-  document.querySelectorAll('.pg').forEach(e => e.classList.remove('act'));
   document.querySelectorAll('.ni[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
-  const pg = document.getElementById('pg-' + p);
-  if (pg) {
-    pg.classList.add('act');
-    // Clear existing overlay
-    let overlay = pg.querySelector('.locked-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'locked-overlay';
-      pg.style.position = 'relative';
-      pg.appendChild(overlay);
-    }
-    const lic = null;
-    const isExpired = lic.reason === 'expired';
-    overlay.innerHTML = '<div class="lock-icon"><i class="ti ti-lock"></i></div>'
-      + '<div class="lock-text">' + (isExpired ? 'Sua chave expirou' : 'Acesso bloqueado') + '</div>'
-      + '<div class="lock-sub">' + (isExpired ? 'Renove sua chave de acesso para continuar usando o Creator Hub.' : 'Adquira uma chave de acesso no nosso site para desbloquear todas as funcionalidades.') + '</div>'
-      + '<button class="lock-btn" onclick="go(&quot;settings&quot;)"><i class="ti ti-key" style="font-size:12px;margin-right:5px"></i>' + (isExpired ? 'Renovar chave' : 'Inserir chave') + '</button>'
-      + '<a href="' + SITE_URL + '" target="_blank" style="font-size:10px;color:var(--acc);cursor:pointer;text-decoration:none;margin-top:4px">Adquirir acesso →</a>';
-  }
-  document.getElementById('pg-title').textContent = PAGES[p] || p;
   document.querySelectorAll('.mn-item[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+  document.getElementById('pg-title').textContent = PAGES[p] || p;
   closeMore();
+  checkLicense().then(lic => {
+    const isExpired = lic.reason === 'expired';
+    const existing = document.getElementById('lock-overlay');
+    if (existing) existing.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'lock-overlay';
+    overlay.className = 'locked-overlay';
+    const actionLabel = isExpired ? 'Renovar chave' : 'Inserir chave';
+    const linkLabel = isExpired ? 'Adquirir nova chave →' : 'Adquirir acesso →';
+    const subText = isExpired
+      ? 'Sua chave de acesso expirou. Renove para continuar usando o Creator Hub.'
+      : 'Esta funcionalidade requer uma chave de acesso.<br>Adquira no nosso site e ative nas configurações.';
+    overlay.innerHTML = '<div class="lock-icon"><i class="ti ti-lock"></i></div>'
+      + '<div class="lock-text">' + (isExpired ? 'Chave expirada' : 'Acesso bloqueado') + '</div>'
+      + '<div class="lock-sub">' + subText + '</div>'
+      + '<button class="lock-btn" id="lock-btn-action"><i class="ti ti-key" style="font-size:12px;margin-right:5px"></i>' + actionLabel + '</button>'
+      + '<a href="' + SITE_URL + '" target="_blank" style="font-size:11px;color:var(--acc);cursor:pointer;text-decoration:none">' + linkLabel + '</a>';
+    document.body.appendChild(overlay);
+    document.getElementById('lock-btn-action').onclick = () => { overlay.remove(); _goBase('settings'); };
+  });
 }
 
 // INIT
