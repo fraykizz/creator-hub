@@ -639,8 +639,8 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
         <div class="card-h"><span class="card-lbl" id="lic-label">Chave de acesso</span><span id="lic-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--bg3);color:var(--txt2)">Sem chave</span></div>
         <p style="font-size:11px;color:var(--txt2);line-height:1.6;margin-bottom:10px" id="lic-info">Cole sua chave de acesso para desbloquear o Creator Hub.</p>
         <div style="display:flex;gap:8px;margin-bottom:10px">
-          <input class="fin" id="lic-inp" type="password" placeholder="Cole sua chave aqui..." style="flex:1">
-          <button class="btn-a" onclick="activateLicense()"><i class="ti ti-key"></i>Ativar</button>
+          <input class="fin" id="lic-inp" type="password" placeholder="Cole seu código (GCR-...) ou chave..." style="flex:1">
+          <button class="btn-a" id="lic-activate-btn" onclick="activateLicense()"><i class="ti ti-key"></i>Ativar</button>
         </div>
         <div id="lic-details" style="display:none;font-size:10px;color:var(--green);margin-bottom:10px"></div>
         <button class="danger-btn" id="lic-remove-btn" style="display:none" onclick="removeLicense()"><i class="ti ti-key-off" style="font-size:12px;margin-right:5px"></i>Remover chave</button>
@@ -1060,7 +1060,7 @@ const LICENSED_PAGES = ['tasks','recs','cal','ai','yt','monetization','shorts','
 const SITE_URL = 'https://seusite.com'; // Troque pelo seu site quando criar
 
 // ── COLE SUA SENHA SECRETA AQUI (mesma do Gerador.py) ──
-const APP_SECRET = 'CreatorHub2026';
+const APP_SECRET = 'COLE_SUA_SENHA_AQUI';
 // ────────────────────────────────────────────────────────
 
 async function hmacSign(secret, message) {
@@ -1141,25 +1141,82 @@ async function applyLicenseState() {
 async function activateLicense() {
   const inp = document.getElementById('lic-inp');
   const key = inp?.value?.trim();
-  if (!key) { toast('Cole sua chave no campo'); return; }
+  if (!key) { toast('Cole seu código no campo'); return; }
+
+  // Codigo curto GCR-...
+  if (key.toUpperCase().startsWith('GCR-')) {
+    const btn = document.getElementById('lic-activate-btn');
+    if (btn) { btn.textContent = 'Buscando...'; btn.disabled = true; }
+    try {
+      const code = key.toUpperCase();
+      const url = 'https://firestore.googleapis.com/v1/projects/creator-hub-893e2/databases/(default)/documents/license_keys/' + code + '?key=AIzaSyAdsAHoraoKLtJ25MOZ234BQIlmQrzEWoQ';
+      const res = await fetch(url);
+      if (!res.ok) {
+        toast('Código não encontrado. Verifique e tente novamente.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      const doc = await res.json();
+      const fields = doc.fields || {};
+      const ativa = fields.ativa?.booleanValue !== false;
+      if (!ativa) {
+        toast('Esta chave foi revogada.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      const fullKey = fields.chave?.stringValue;
+      const exp = parseInt(fields.exp?.integerValue || 0);
+      if (!fullKey) {
+        toast('Erro ao buscar chave. Tente novamente.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      if (exp !== 9999999999999 && Date.now() > exp) {
+        toast('Este código já expirou!');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      const parts = fullKey.split('.');
+      const expectedSig = await hmacSign(APP_SECRET, parts[0]);
+      if (parts[1] !== expectedSig) {
+        toast('Erro de validação. Contate o suporte.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      localStorage.setItem('ch_license', fullKey);
+      localStorage.setItem('ch_license_code', code);
+      inp.value = '';
+      if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+      await applyLicenseState();
+      const days = getDaysLeft(exp);
+      toast(days === null ? '🎉 Acesso ilimitado ativado!' : '🎉 Acesso ativado por ' + days + ' dias!');
+    } catch(e) {
+      toast('Erro de conexão. Verifique sua internet e tente novamente.');
+      const btn2 = document.getElementById('lic-activate-btn');
+      if (btn2) { btn2.textContent = 'Ativar'; btn2.disabled = false; }
+    }
+    return;
+  }
+
+  // Chave HMAC completa (fallback)
   try {
     const parts = key.split('.');
-    if (parts.length !== 2) { toast('Chave inválida. Verifique e tente novamente.'); return; }
+    if (parts.length !== 2) { toast('Código inválido. Use o código GCR-... recebido.'); return; }
     const [payload, sig] = parts;
     const expectedSig = await hmacSign(APP_SECRET, payload);
-    if (sig !== expectedSig) { toast('Chave inválida — assinatura incorreta.'); return; }
+    if (sig !== expectedSig) { toast('Código inválido — assinatura incorreta.'); return; }
     const decoded = JSON.parse(atob(payload));
-    if (!decoded.exp) { toast('Chave inválida.'); return; }
+    if (!decoded.exp) { toast('Código inválido.'); return; }
     if (decoded.exp !== 9999999999999 && Date.now() > decoded.exp) {
-      toast('Esta chave já expirou!'); return;
+      toast('Este código já expirou!'); return;
     }
     localStorage.setItem('ch_license', key);
     inp.value = '';
-    await applyLicenseState();  // async, runs in background
+    await applyLicenseState();
     const days = getDaysLeft(decoded.exp);
     toast(days === null ? '🎉 Acesso ilimitado ativado!' : '🎉 Acesso ativado por ' + days + ' dias!');
   } catch(e) {
-    toast('Chave inválida. Verifique e tente novamente.');
+    toast('Código inválido. Verifique e tente novamente.');
   }
 }
 
