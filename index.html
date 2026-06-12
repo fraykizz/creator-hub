@@ -1233,43 +1233,69 @@ function removeLicense() {
 }
 
 // Override go() to check license before navigating
-const _goWithLicense = _goBase;
-function _goBase(p) {
+// _goWithLicense = the real nav function
+// go() = license-checking wrapper
+function go(p) {
   if (LICENSED_PAGES.includes(p)) {
+    // Immediately hide all pages while checking
+    document.querySelectorAll('.pg').forEach(e => e.classList.remove('act'));
+    document.querySelectorAll('.ni[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+    document.querySelectorAll('.mn-item[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+    document.getElementById('pg-title').textContent = PAGES[p] || p;
+    closeMore();
     checkLicense().then(lic => {
-      if (!lic.valid) showLockScreen(p);
-      else _goBase(p);
+      if (!lic.valid) {
+        showLockScreen(p);
+      } else {
+        const lo = document.getElementById('lock-overlay');
+        if (lo) lo.remove();
+        _goBase(p);
+      }
     });
     return;
   }
-  _goWithLicense(p);
+  // Unlocked page - remove overlay if present and navigate
+  const lo = document.getElementById('lock-overlay');
+  if (lo) lo.remove();
+  _goBase(p);
 }
 
 function showLockScreen(p) {
+  // Update nav highlight only
   document.querySelectorAll('.ni[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
   document.querySelectorAll('.mn-item[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
   document.getElementById('pg-title').textContent = PAGES[p] || p;
   closeMore();
-  checkLicense().then(lic => {
-    const isExpired = lic.reason === 'expired';
-    const existing = document.getElementById('lock-overlay');
-    if (existing) existing.remove();
-    const overlay = document.createElement('div');
-    overlay.id = 'lock-overlay';
-    overlay.className = 'locked-overlay';
-    const actionLabel = isExpired ? 'Renovar chave' : 'Inserir chave';
-    const linkLabel = isExpired ? 'Adquirir nova chave →' : 'Adquirir acesso →';
-    const subText = isExpired
-      ? 'Sua chave de acesso expirou. Renove para continuar usando o Creator Hub.'
-      : 'Esta funcionalidade requer uma chave de acesso.<br>Adquira no nosso site e ative nas configurações.';
-    overlay.innerHTML = '<div class="lock-icon"><i class="ti ti-lock"></i></div>'
-      + '<div class="lock-text">' + (isExpired ? 'Chave expirada' : 'Acesso bloqueado') + '</div>'
-      + '<div class="lock-sub">' + subText + '</div>'
-      + '<button class="lock-btn" id="lock-btn-action"><i class="ti ti-key" style="font-size:12px;margin-right:5px"></i>' + actionLabel + '</button>'
-      + '<a href="' + SITE_URL + '" target="_blank" style="font-size:11px;color:var(--acc);cursor:pointer;text-decoration:none">' + linkLabel + '</a>';
-    document.body.appendChild(overlay);
-    document.getElementById('lock-btn-action').onclick = () => { overlay.remove(); _goBase('settings'); };
-  });
+  // Remove existing overlay
+  const existing = document.getElementById('lock-overlay');
+  if (existing) existing.remove();
+  // Full-screen black overlay — no page content shown at all
+  const overlay = document.createElement('div');
+  overlay.id = 'lock-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;animation:fadeIn .25s ease';
+  const lockIcon = document.createElement('div');
+  lockIcon.style.cssText = 'width:64px;height:64px;border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center';
+  lockIcon.innerHTML = '<i class="ti ti-lock" style="font-size:28px;color:#555"></i>';
+  const lockTitle = document.createElement('div');
+  lockTitle.style.cssText = 'font-family:var(--serif);font-size:22px;font-style:italic;color:#fff;text-align:center';
+  lockTitle.textContent = 'Acesso bloqueado';
+  const lockSub = document.createElement('div');
+  lockSub.style.cssText = 'font-size:12px;color:#666;text-align:center;max-width:260px;line-height:1.7';
+  lockSub.textContent = 'Adquira uma chave de acesso no nosso site para desbloquear todas as funcionalidades.';
+  const lockBtns = document.createElement('div');
+  lockBtns.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px';
+  const lockBtn = document.createElement('button');
+  lockBtn.style.cssText = 'background:#c8a96e;color:#000;border:none;border-radius:8px;padding:10px 24px;font-size:12px;font-family:var(--sans);font-weight:600;cursor:pointer';
+  lockBtn.textContent = 'Inserir chave de acesso';
+  lockBtn.onclick = () => { overlay.remove(); go('settings'); };
+  const lockLink = document.createElement('a');
+  lockLink.href = SITE_URL; lockLink.target = '_blank';
+  lockLink.style.cssText = 'font-size:11px;color:#555;text-decoration:none;cursor:pointer';
+  lockLink.textContent = 'Adquirir acesso no site →';
+  lockBtns.appendChild(lockBtn); lockBtns.appendChild(lockLink);
+  overlay.appendChild(lockIcon); overlay.appendChild(lockTitle);
+  overlay.appendChild(lockSub); overlay.appendChild(lockBtns);
+  document.body.appendChild(overlay);
 }
 
 // INIT
