@@ -30,7 +30,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .pg{display:none;flex:1;flex-direction:column;overflow:hidden}
 .pg.act{display:flex;animation:fadeSlideIn .25s cubic-bezier(.4,0,.2,1)}
-.sb{width:54px;background:var(--bg1);border-right:1px solid var(--bg3);display:flex;flex-direction:column;align-items:center;padding:12px 0 10px;flex-shrink:0;transition:width .25s}
+.sb{width:54px;background:var(--bg1);border-right:1px solid var(--bg3);display:flex;flex-direction:column;align-items:center;padding:12px 0 10px;flex-shrink:0;transition:width .25s;position:relative;z-index:95}
 .sb.open{width:196px;align-items:flex-start}
 .sb-logo{width:32px;height:32px;border-radius:9px;background:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:14px;cursor:pointer;transition:transform .2s,background .2s}
 .sb-logo:hover{transform:scale(1.08);background:var(--acc2)}
@@ -307,7 +307,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   .mbox{width:calc(100vw - 20px);padding:14px}
 }
 @media(max-width:480px){.mbox{width:calc(100vw - 16px)}}
-.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:56px;background:var(--bg1);border-top:1px solid var(--bg3);z-index:50;align-items:center;justify-content:space-around;padding:0 4px}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:56px;background:var(--bg1);border-top:1px solid var(--bg3);z-index:96;align-items:center;justify-content:space-around;padding:0 4px}
 .mn-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--txt2);transition:color .15s;padding:4px 8px;border-radius:8px;flex:1;justify-content:center}
 .mn-item.act{color:var(--acc2)}
 .mn-item i{font-size:20px}
@@ -1060,7 +1060,7 @@ const LICENSED_PAGES = ['tasks','recs','cal','ai','yt','monetization','shorts','
 const SITE_URL = 'https://seusite.com'; // Troque pelo seu site quando criar
 
 // ── COLE SUA SENHA SECRETA AQUI (mesma do Gerador.py) ──
-const APP_SECRET = 'CreatorHub2026';
+const APP_SECRET = 'COLE_SUA_SENHA_AQUI';
 // ────────────────────────────────────────────────────────
 
 async function hmacSign(secret, message) {
