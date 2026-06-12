@@ -1141,9 +1141,8 @@ async function applyLicenseState() {
 async function activateLicense() {
   const inp = document.getElementById('lic-inp');
   const key = inp?.value?.trim();
-  if (!key) { toast('Cole seu código no campo'); return; }
+  if (!key) { toast('Cole seu codigo no campo'); return; }
 
-  // Codigo curto GCR-...
   if (key.toUpperCase().startsWith('GCR-')) {
     const btn = document.getElementById('lic-activate-btn');
     if (btn) { btn.textContent = 'Buscando...'; btn.disabled = true; }
@@ -1152,34 +1151,39 @@ async function activateLicense() {
       const url = 'https://firestore.googleapis.com/v1/projects/creator-hub-893e2/databases/(default)/documents/license_keys/' + code + '?key=AIzaSyAdsAHoraoKLtJ25MOZ234BQIlmQrzEWoQ';
       const res = await fetch(url);
       if (!res.ok) {
-        toast('Código não encontrado. Verifique e tente novamente.');
+        toast('Codigo nao encontrado. Verifique e tente novamente.');
         if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
         return;
       }
       const doc = await res.json();
       const fields = doc.fields || {};
-      const ativa = fields.ativa?.booleanValue !== false;
-      if (!ativa) {
+      const ativa = fields.ativa?.booleanValue;
+      if (ativa === false) {
         toast('Esta chave foi revogada.');
         if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
         return;
       }
       const fullKey = fields.chave?.stringValue;
-      const exp = parseInt(fields.exp?.integerValue || 0);
+      const exp = parseInt(fields.exp?.integerValue || '0');
       if (!fullKey) {
         toast('Erro ao buscar chave. Tente novamente.');
         if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
         return;
       }
       if (exp !== 9999999999999 && Date.now() > exp) {
-        toast('Este código já expirou!');
+        toast('Este codigo ja expirou!');
         if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
         return;
       }
       const parts = fullKey.split('.');
+      if (parts.length !== 2) {
+        toast('Erro de validacao. Contate o suporte.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
       const expectedSig = await hmacSign(APP_SECRET, parts[0]);
       if (parts[1] !== expectedSig) {
-        toast('Erro de validação. Contate o suporte.');
+        toast('Erro de validacao. Contate o suporte.');
         if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
         return;
       }
@@ -1191,24 +1195,25 @@ async function activateLicense() {
       const days = getDaysLeft(exp);
       toast(days === null ? '🎉 Acesso ilimitado ativado!' : '🎉 Acesso ativado por ' + days + ' dias!');
     } catch(e) {
-      toast('Erro de conexão. Verifique sua internet e tente novamente.');
+      console.error('activateLicense error:', e);
+      toast('Erro de conexao. Verifique sua internet.');
       const btn2 = document.getElementById('lic-activate-btn');
       if (btn2) { btn2.textContent = 'Ativar'; btn2.disabled = false; }
     }
     return;
   }
 
-  // Chave HMAC completa (fallback)
+  // Chave HMAC completa
   try {
     const parts = key.split('.');
-    if (parts.length !== 2) { toast('Código inválido. Use o código GCR-... recebido.'); return; }
+    if (parts.length !== 2) { toast('Codigo invalido.'); return; }
     const [payload, sig] = parts;
     const expectedSig = await hmacSign(APP_SECRET, payload);
-    if (sig !== expectedSig) { toast('Código inválido — assinatura incorreta.'); return; }
+    if (sig !== expectedSig) { toast('Codigo invalido.'); return; }
     const decoded = JSON.parse(atob(payload));
-    if (!decoded.exp) { toast('Código inválido.'); return; }
+    if (!decoded.exp) { toast('Codigo invalido.'); return; }
     if (decoded.exp !== 9999999999999 && Date.now() > decoded.exp) {
-      toast('Este código já expirou!'); return;
+      toast('Este codigo ja expirou!'); return;
     }
     localStorage.setItem('ch_license', key);
     inp.value = '';
@@ -1216,7 +1221,7 @@ async function activateLicense() {
     const days = getDaysLeft(decoded.exp);
     toast(days === null ? '🎉 Acesso ilimitado ativado!' : '🎉 Acesso ativado por ' + days + ' dias!');
   } catch(e) {
-    toast('Código inválido. Verifique e tente novamente.');
+    toast('Codigo invalido. Verifique e tente novamente.');
   }
 }
 
