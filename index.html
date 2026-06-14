@@ -1133,17 +1133,319 @@ function startChatWith(uid,name){document.getElementById('profile-modal').classL
 
 // COMMUNITY + SOCIAL
 let viewingUid=null;
-async function loadPeople(){const el=document.getElementById('people-list');if(!el||!window._fbUser||!window.fbGets||!window.fbCol)return;el.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';try{const snap=await window.fbGets(window.fbCol('profiles'));const people=[];snap.forEach(d=>{if(d.id!==window._fbUser.uid)people.push({uid:d.id,...d.data()})});if(!people.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i>Nenhum outro criador ainda. Convide amigos!</div>';return}el.innerHTML='';people.forEach(p=>{const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bg3);cursor:pointer';row.onmouseover=()=>row.style.background='color-mix(in srgb,var(--acc) 4%,transparent)';row.onmouseout=()=>row.style.background='';row.onclick=()=>viewProfile(p.uid);const av=document.createElement('div');av.style.cssText='width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--acc) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden';av.innerHTML=p.photo?'<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">':'<i class="ti ti-user" style="font-size:16px;color:var(--acc2)"></i>';const info=document.createElement('div');info.style.flex='1';const nm=document.createElement('div');nm.style.cssText='font-size:12px;color:var(--txt1);font-weight:500';nm.textContent=p.name||'Usuário';info.appendChild(nm);if(p.channel){const ch=document.createElement('div');ch.style.cssText='font-size:9px;color:var(--acc)';ch.textContent=p.channel;info.appendChild(ch)}if(p.bio){const bi=document.createElement('div');bi.style.cssText='font-size:10px;color:var(--txt2)';bi.textContent=p.bio;info.appendChild(bi)}const fol=document.createElement('div');fol.style.cssText='font-size:9px;color:var(--txt2);text-align:right';fol.textContent=(p.followers||[]).length+' seg.';row.appendChild(av);row.appendChild(info);row.appendChild(fol);el.appendChild(row)})}catch(e){el.innerHTML='<div class="empty"><i class="ti ti-alert-triangle"></i>Erro: '+e.message+'</div>'}}
+async function loadPeople() {
+  const el = document.getElementById('people-list');
+  if (!el) return;
+  if (!window._fbUser) { el.innerHTML = '<div class="empty"><i class="ti ti-users"></i>Faça login para ver a comunidade.</div>'; return; }
+  el.innerHTML = '<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';
+  try {
+    const snap = await window.fbGets(window.fbCol('profiles'));
+    const people = [];
+    snap.forEach(d => { if (d.id !== window._fbUser.uid) people.push({uid: d.id, ...d.data()}); });
+    if (!people.length) { el.innerHTML = '<div class="empty"><i class="ti ti-users"></i>Nenhum criador ainda. Convide amigos!</div>'; return; }
+    el.innerHTML = '';
+    // Load my following list
+    let myFollowing = [];
+    try {
+      const mySnap = await window.fbGet(window.fbDoc('profiles', window._fbUser.uid));
+      if (mySnap.exists()) myFollowing = mySnap.data().following || [];
+    } catch(e) {}
+    people.forEach(p => {
+      const isFollowing = myFollowing.includes(p.uid);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bg3);cursor:pointer;transition:all .15s';
+      row.onmouseover = () => row.style.background = 'color-mix(in srgb,var(--acc) 4%,transparent)';
+      row.onmouseout = () => row.style.background = '';
+      // Avatar
+      const av = document.createElement('div');
+      av.style.cssText = 'width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--acc) 12%,transparent);border:1px solid color-mix(in srgb,var(--acc) 20%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden';
+      av.innerHTML = p.photo ? '<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">' : '<i class="ti ti-user" style="font-size:18px;color:var(--acc2)"></i>';
+      // Info
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      const nm = document.createElement('div');
+      nm.style.cssText = 'font-size:13px;color:var(--txt0);font-weight:500';
+      nm.textContent = p.name || 'Usuário';
+      info.appendChild(nm);
+      if (p.channel) {
+        const ch = document.createElement('div');
+        ch.style.cssText = 'font-size:10px;color:var(--acc);margin-top:1px';
+        ch.textContent = p.channel;
+        info.appendChild(ch);
+      }
+      if (p.bio) {
+        const bi = document.createElement('div');
+        bi.style.cssText = 'font-size:10px;color:var(--txt2);margin-top:2px';
+        bi.textContent = p.bio.substring(0, 60) + (p.bio.length > 60 ? '...' : '');
+        info.appendChild(bi);
+      }
+      // Stats
+      const stats = document.createElement('div');
+      stats.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:4px';
+      const fol = document.createElement('div');
+      fol.style.cssText = 'font-size:9px;color:var(--txt2)';
+      fol.textContent = (p.followers||[]).length + ' seguidores';
+      // Follow button
+      const fbtn = document.createElement('button');
+      fbtn.style.cssText = 'font-size:9px;padding:3px 10px;border-radius:20px;border:1px solid ' + (isFollowing ? 'var(--bg4)' : 'var(--acc)') + ';background:' + (isFollowing ? 'transparent' : 'color-mix(in srgb,var(--acc) 12%,transparent)') + ';color:' + (isFollowing ? 'var(--txt2)' : 'var(--acc2)') + ';cursor:pointer;font-family:var(--sans);transition:all .15s';
+      fbtn.textContent = isFollowing ? 'Seguindo' : 'Seguir';
+      fbtn.onclick = async (e) => {
+        e.stopPropagation();
+        await toggleFollowUser(p.uid, fbtn);
+      };
+      stats.appendChild(fol);
+      stats.appendChild(fbtn);
+      row.appendChild(av);
+      row.appendChild(info);
+      row.appendChild(stats);
+      row.onclick = () => viewProfile(p.uid);
+      el.appendChild(row);
+    });
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro: ' + e.message + '</div>';
+    console.error('loadPeople error:', e);
+  }
+}
 async function loadCommProfile(){if(!window._fbUser||!window.fbGet||!window.fbDoc)return;try{const s=await window.fbGet(window.fbDoc('profiles',window._fbUser.uid));if(s.exists()){const d=s.data();const bio=document.getElementById('comm-bio');const ch=document.getElementById('comm-chan');if(bio&&d.bio)bio.value=d.bio;if(ch&&d.channel)ch.value=d.channel}}catch(e){}}
 async function saveCommProfile(){if(!window._fbUser||!window.fbSet||!window.fbDoc)return;const bio=document.getElementById('comm-bio')?.value?.trim()||'';const channel=document.getElementById('comm-chan')?.value?.trim()||'';try{await window.fbSet(window.fbDoc('profiles',window._fbUser.uid),{bio,channel},{merge:true});toast('Perfil público atualizado!');const s_inp=document.getElementById('s-bio');const c_inp=document.getElementById('s-chan-inp');if(s_inp)s_inp.value=bio;if(c_inp)c_inp.value=channel}catch(e){toast('Erro: '+e.message)}}
-async function viewProfile(uid){if(!uid)return;viewingUid=uid;const modal=document.getElementById('profile-modal');modal.classList.add('open');if(!window.fbGet||!window.fbDoc){document.getElementById('pm-name').textContent='Usuário';return}try{const snap=await window.fbGet(window.fbDoc('profiles',uid));const p=snap.exists()?snap.data():{name:'Usuário',bio:'',channel:'',followers:[],following:[]};document.getElementById('pm-name').textContent=p.name||'Usuário';document.getElementById('pm-chan').textContent=p.channel||'';document.getElementById('pm-bio').textContent=p.bio||'';document.getElementById('pm-followers').textContent=(p.followers||[]).length;document.getElementById('pm-following').textContent=(p.following||[]).length;const avEl=document.getElementById('pm-av');if(p.photo)avEl.innerHTML='<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">';else avEl.innerHTML='<i class="ti ti-user" style="font-size:24px;color:var(--acc2)"></i>';const me=window._fbUser;if(me&&me.uid!==uid){document.getElementById('pm-msg').style.display='flex';const mySnap=await window.fbGet(window.fbDoc('profiles',me.uid));const myData=mySnap.exists()?mySnap.data():{};const following=myData.following||[];const btn=document.getElementById('pm-follow');const isF=following.includes(uid);btn.textContent=isF?'Seguindo ✓':'Seguir';btn.style.background=isF?'var(--bg3)':'var(--acc)';btn.style.color=isF?'var(--txt1)':'var(--bg)';btn.style.border=isF?'1px solid var(--bg4)':'none'}else{document.getElementById('pm-follow').style.display='none';document.getElementById('pm-msg').style.display='none'};document.getElementById('pm-msg').onclick=()=>startChatWith(uid,p.name||'Usuário')}catch(e){console.error(e)}}
-async function doFollow(){const uid=viewingUid;const me=window._fbUser;if(!me||!uid||!window.fbGet||!window.fbSet||!window.fbDoc){toast('Faça login para seguir');return}const btn=document.getElementById('pm-follow');if(btn)btn.disabled=true;try{const myRef=window.fbDoc('profiles',me.uid);const theirRef=window.fbDoc('profiles',uid);const[mySnap,theirSnap]=await Promise.all([window.fbGet(myRef),window.fbGet(theirRef)]);const myData=mySnap.exists()?mySnap.data():{};const theirData=theirSnap.exists()?theirSnap.data():{};const myF=myData.following||[];const theirF=theirData.followers||[];const isF=myF.includes(uid);if(isF){await window.fbSet(myRef,{following:myF.filter(id=>id!==uid)},{merge:true});await window.fbSet(theirRef,{followers:theirF.filter(id=>id!==me.uid)},{merge:true});toast('Deixou de seguir')}else{await window.fbSet(myRef,{following:[...myF,uid]},{merge:true});await window.fbSet(theirRef,{followers:[...theirF,me.uid]},{merge:true});toast('Seguindo! 🎉')}if(btn)btn.disabled=false;viewProfile(uid)}catch(e){if(btn)btn.disabled=false;toast('Erro: '+e.message)}}
+async function viewProfile(uid) {
+  if (!uid) return;
+  viewingUid = uid;
+  const modal = document.getElementById('profile-modal');
+  if (!modal) return;
+  modal.classList.add('open');
+  // Reset
+  document.getElementById('pm-name').textContent = 'Carregando...';
+  document.getElementById('pm-chan').textContent = '';
+  document.getElementById('pm-bio').textContent = '';
+  document.getElementById('pm-followers').textContent = '0';
+  document.getElementById('pm-following').textContent = '0';
+  document.getElementById('pm-av').innerHTML = '<i class="ti ti-user" style="font-size:24px;color:var(--acc2)"></i>';
+  const followBtn = document.getElementById('pm-follow');
+  const msgBtn = document.getElementById('pm-msg');
+  if (!window.fbGet || !window.fbDoc) { document.getElementById('pm-name').textContent = 'Firebase carregando...'; return; }
+  try {
+    const snap = await window.fbGet(window.fbDoc('profiles', uid));
+    if (!snap.exists()) { document.getElementById('pm-name').textContent = 'Perfil não encontrado'; return; }
+    const p = snap.data();
+    document.getElementById('pm-name').textContent = p.name || 'Usuário';
+    document.getElementById('pm-chan').textContent = p.channel || '';
+    document.getElementById('pm-bio').textContent = p.bio || '';
+    document.getElementById('pm-followers').textContent = (p.followers||[]).length;
+    document.getElementById('pm-following').textContent = (p.following||[]).length;
+    if (p.photo) {
+      document.getElementById('pm-av').innerHTML = '<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">';
+    }
+    const me = window._fbUser;
+    if (me && me.uid !== uid) {
+      if (followBtn) followBtn.style.display = 'flex';
+      if (msgBtn) msgBtn.style.display = 'flex';
+      // Check if already following
+      const mySnap = await window.fbGet(window.fbDoc('profiles', me.uid));
+      const myData = mySnap.exists() ? mySnap.data() : {};
+      const isF = (myData.following || []).includes(uid);
+      if (followBtn) {
+        followBtn.textContent = isF ? 'Seguindo' : 'Seguir';
+        followBtn.style.background = isF ? 'transparent' : 'var(--acc)';
+        followBtn.style.color = isF ? 'var(--txt1)' : 'var(--bg)';
+        followBtn.style.border = isF ? '1px solid var(--bg4)' : 'none';
+        followBtn.onclick = () => doFollow();
+      }
+      if (msgBtn) msgBtn.onclick = () => startChatWith(uid, p.name || 'Usuário');
+    } else {
+      if (followBtn) followBtn.style.display = 'none';
+      if (msgBtn) msgBtn.style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('pm-name').textContent = 'Erro ao carregar';
+    console.error('viewProfile error:', e);
+  }
+}
+async function doFollow() {
+  await toggleFollowUser(viewingUid, document.getElementById('pm-follow'));
+  viewProfile(viewingUid);
+}
+
+async function toggleFollowUser(uid, btn) {
+  const me = window._fbUser;
+  if (!me || !uid) { toast('Faça login para seguir'); return; }
+  if (me.uid === uid) return;
+  if (!window.fbDoc || !window.fbGet || !window.fbSet) { toast('Aguarde o carregamento...'); return; }
+  if (btn) btn.disabled = true;
+  try {
+    const myRef = window.fbDoc('profiles', me.uid);
+    const theirRef = window.fbDoc('profiles', uid);
+    const [mySnap, theirSnap] = await Promise.all([window.fbGet(myRef), window.fbGet(theirRef)]);
+    const myData = mySnap.exists() ? mySnap.data() : {};
+    const theirData = theirSnap.exists() ? theirSnap.data() : {};
+    const myFollowing = myData.following || [];
+    const theirFollowers = theirData.followers || [];
+    const isFollowing = myFollowing.includes(uid);
+    if (isFollowing) {
+      await window.fbSet(myRef, { following: myFollowing.filter(id => id !== uid) }, { merge: true });
+      await window.fbSet(theirRef, { followers: theirFollowers.filter(id => id !== me.uid) }, { merge: true });
+      toast('Deixou de seguir');
+      if (btn) {
+        btn.textContent = 'Seguir';
+        btn.style.borderColor = 'var(--acc)';
+        btn.style.color = 'var(--acc2)';
+        btn.style.background = 'color-mix(in srgb,var(--acc) 12%,transparent)';
+      }
+    } else {
+      await window.fbSet(myRef, { following: [...myFollowing, uid] }, { merge: true });
+      await window.fbSet(theirRef, { followers: [...theirFollowers, me.uid] }, { merge: true });
+      toast('Seguindo! 🎉');
+      if (btn) {
+        btn.textContent = 'Seguindo';
+        btn.style.borderColor = 'var(--bg4)';
+        btn.style.color = 'var(--txt2)';
+        btn.style.background = 'transparent';
+      }
+    }
+  } catch(e) {
+    toast('Erro: ' + e.message);
+    console.error('Follow error:', e);
+  }
+  if (btn) btn.disabled = false;
+}
 
 // FEEDBACK
 let fbType='suggestion';
 function setFbType(el){fbType=el.dataset.ft;document.querySelectorAll('#fb-types .tp').forEach(t=>t.classList.toggle('on',t===el))}
 async function submitFb(){const msg=document.getElementById('fb-msg').value.trim();if(!msg){toast('Escreva uma mensagem primeiro');return}if(!window._fbUser){toast('Faça login para enviar feedback');return}if(!window.fbSet||!window.fbDoc){toast('Firebase não carregado ainda');return}try{const user=window._fbUser;await window.fbSet(window.fbDoc('feedbacks',Date.now()+'_'+user.uid),{type:fbType,message:msg,author:user.displayName||user.email.split('@')[0],uid:user.uid,photo:user.photoURL||'',createdAt:Date.now(),date:new Date().toLocaleDateString('pt-BR')});document.getElementById('fb-msg').value='';toast('Feedback enviado! Obrigado 💛');awardXP('feedback_sent');loadFbs()}catch(e){toast('Erro: '+e.message);console.error(e)}}
-async function loadFbs(){const el=document.getElementById('fb-list');if(!el||!window._fbUser||!window.fbGets||!window.fbCol)return;el.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';try{const snap=await window.fbGets(window.fbCol('feedbacks'));const items=[];snap.forEach(d=>items.push(d.data()));items.sort((a,b)=>b.createdAt-a.createdAt);if(!items.length){el.innerHTML='<div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda. Seja o primeiro!</div>';return}const tl={suggestion:'💡 Sugestão',bug:'🐛 Bug',idea:'✨ Ideia',compliment:'❤️ Elogio'};el.innerHTML='';items.forEach(fb=>{const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg3);cursor:pointer';row.onclick=()=>viewProfile(fb.uid);const av=document.createElement('div');av.style.cssText='width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden';av.innerHTML=fb.photo?'<img src="'+fb.photo+'" style="width:100%;height:100%;object-fit:cover">':'<i class="ti ti-user" style="font-size:14px;color:var(--acc2)"></i>';const content=document.createElement('div');content.style.flex='1';const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap';const nm=document.createElement('span');nm.style.cssText='font-size:12px;color:var(--txt1);font-weight:500';nm.textContent=fb.author;const tag=document.createElement('span');tag.style.cssText='font-size:9px;padding:1px 7px;border-radius:20px;background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc2)';tag.textContent=tl[fb.type]||fb.type;const dt=document.createElement('span');dt.style.cssText='font-size:9px;color:var(--txt3);margin-left:auto';dt.textContent=fb.date;hdr.appendChild(nm);hdr.appendChild(tag);hdr.appendChild(dt);const msg=document.createElement('div');msg.style.cssText='font-size:12px;color:var(--txt1);line-height:1.65';msg.textContent=fb.message;content.appendChild(hdr);content.appendChild(msg);row.appendChild(av);row.appendChild(content);el.appendChild(row)})}catch(e){el.innerHTML='<div class="empty"><i class="ti ti-alert-triangle"></i>Erro: '+e.message+'</div>';console.error(e)}}
+async function loadFbs() {
+  const el = document.getElementById('fb-list');
+  if (!el || !window._fbUser || !window.fbGets || !window.fbCol) return;
+  el.innerHTML = '<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';
+  try {
+    const snap = await window.fbGets(window.fbCol('feedbacks'));
+    const items = [];
+    snap.forEach(d => items.push({id: d.id, ...d.data()}));
+    items.sort((a,b) => b.createdAt - a.createdAt);
+    if (!items.length) { el.innerHTML = '<div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda. Seja o primeiro!</div>'; return; }
+    const tl = {suggestion:'💡 Sugestão', bug:'🐛 Bug', idea:'✨ Ideia', compliment:'❤️ Elogio'};
+    const myUid = window._fbUser.uid;
+    el.innerHTML = '';
+    items.forEach(fb => {
+      const likes = fb.likes || [];
+      const liked = likes.includes(myUid);
+      const replies = fb.replies || [];
+      const card = document.createElement('div');
+      card.style.cssText = 'padding:14px 0;border-bottom:1px solid var(--bg3)';
+      // Header row
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer';
+      hdr.onclick = () => viewProfile(fb.uid);
+      const av = document.createElement('div');
+      av.style.cssText = 'width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);border:1px solid color-mix(in srgb,var(--acc) 20%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden';
+      av.innerHTML = fb.photo ? '<img src="'+fb.photo+'" style="width:100%;height:100%;object-fit:cover">' : '<i class="ti ti-user" style="font-size:15px;color:var(--acc2)"></i>';
+      const meta = document.createElement('div');
+      meta.style.flex = '1';
+      meta.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<span style="font-size:12px;color:var(--txt0);font-weight:500">' + (fb.author||'Anônimo') + '</span>'
+        + '<span style="font-size:9px;padding:1px 8px;border-radius:20px;background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc2)">' + (tl[fb.type]||fb.type) + '</span>'
+        + '<span style="font-size:9px;color:var(--txt3);margin-left:auto">' + (fb.date||'') + '</span>'
+        + '</div>';
+      hdr.appendChild(av); hdr.appendChild(meta);
+      // Message
+      const msg = document.createElement('div');
+      msg.style.cssText = 'font-size:12px;color:var(--txt1);line-height:1.7;margin-bottom:10px';
+      msg.textContent = fb.message;
+      // Actions
+      const actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;align-items:center;gap:16px';
+      // Like button
+      const likeBtn = document.createElement('button');
+      likeBtn.style.cssText = 'background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:11px;color:' + (liked?'var(--red)':'var(--txt2)') + ';font-family:var(--sans);padding:0;transition:color .15s';
+      likeBtn.innerHTML = '<i class="ti ti-heart' + (liked?'-filled':'') + '" style="font-size:14px"></i>' + likes.length;
+      likeBtn.onclick = () => toggleLikeFb(fb.id, likeBtn);
+      // Reply button
+      const replyBtn = document.createElement('button');
+      replyBtn.style.cssText = 'background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2);font-family:var(--sans);padding:0;transition:color .15s';
+      replyBtn.innerHTML = '<i class="ti ti-message-reply" style="font-size:14px"></i>' + replies.length + ' respostas';
+      const repliesDiv = document.createElement('div');
+      repliesDiv.style.display = 'none';
+      replyBtn.onclick = () => {
+        repliesDiv.style.display = repliesDiv.style.display === 'none' ? 'block' : 'none';
+        renderReplies(fb.id, repliesDiv, replies);
+      };
+      actions.appendChild(likeBtn);
+      actions.appendChild(replyBtn);
+      card.appendChild(hdr);
+      card.appendChild(msg);
+      card.appendChild(actions);
+      card.appendChild(repliesDiv);
+      el.appendChild(card);
+    });
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i>Erro: ' + e.message + '</div>';
+    console.error('loadFbs error:', e);
+  }
+}
+
+async function toggleLikeFb(fbId, btn) {
+  if (!window._fbUser || !window.fbDoc || !window.fbGet || !window.fbSet) return;
+  try {
+    const ref = window.fbDoc('feedbacks', fbId);
+    const snap = await window.fbGet(ref);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const likes = data.likes || [];
+    const myUid = window._fbUser.uid;
+    const liked = likes.includes(myUid);
+    const newLikes = liked ? likes.filter(id => id !== myUid) : [...likes, myUid];
+    await window.fbSet(ref, { likes: newLikes }, { merge: true });
+    btn.innerHTML = '<i class="ti ti-heart' + (liked?'':'-filled') + '" style="font-size:14px"></i>' + newLikes.length;
+    btn.style.color = liked ? 'var(--txt2)' : 'var(--red)';
+  } catch(e) { toast('Erro: ' + e.message); }
+}
+
+function renderReplies(fbId, container, existingReplies) {
+  container.style.cssText = 'margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:8px;border-left:2px solid var(--bg4)';
+  // Replies list
+  const list = document.createElement('div');
+  existingReplies.forEach(r => {
+    const d = document.createElement('div');
+    d.style.cssText = 'padding:6px 0;border-bottom:1px solid var(--bg3)';
+    d.innerHTML = '<div style="font-size:10px;color:var(--acc2);font-weight:500;margin-bottom:2px">' + (r.author||'Anônimo') + ' <span style="color:var(--txt3);font-weight:400">' + (r.date||'') + '</span></div><div style="font-size:11px;color:var(--txt1);line-height:1.6">' + r.text + '</div>';
+    list.appendChild(d);
+  });
+  // Reply input
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+  const inp = document.createElement('input');
+  inp.className = 'fin'; inp.placeholder = 'Escreva uma resposta...';
+  inp.style.cssText = 'flex:1;font-size:11px;padding:6px 10px';
+  const btn = document.createElement('button');
+  btn.className = 'btn-a'; btn.style.padding = '6px 12px';
+  btn.innerHTML = '<i class="ti ti-send-2" style="font-size:11px"></i>';
+  btn.onclick = () => submitReplyDirect(fbId, inp);
+  row.appendChild(inp); row.appendChild(btn);
+  container.innerHTML = '';
+  container.appendChild(list); container.appendChild(row);
+}
+
+async function submitReplyDirect(fbId, inp) {
+  const text = inp?.value?.trim();
+  if (!text || !window._fbUser) return;
+  try {
+    const ref = window.fbDoc('feedbacks', fbId);
+    const snap = await window.fbGet(ref);
+    const data = snap.exists() ? snap.data() : {};
+    const replies = data.replies || [];
+    replies.push({
+      author: window._fbUser.displayName || window._fbUser.email.split('@')[0],
+      uid: window._fbUser.uid,
+      text,
+      date: new Date().toLocaleDateString('pt-BR'),
+      ts: Date.now()
+    });
+    await window.fbSet(ref, { replies }, { merge: true });
+    inp.value = '';
+    toast('Resposta enviada!');
+    loadFbs();
+  } catch(e) { toast('Erro: ' + e.message); }
+}
 
 // PROFILE & SETTINGS
 function upPreview(){document.getElementById('p-name').textContent=document.getElementById('s-name').value||'Seu nome';document.getElementById('p-email').textContent=document.getElementById('s-email').value||'seu@email.com';document.getElementById('p-chan').textContent=document.getElementById('s-chan-inp').value||'';document.getElementById('sb-name').textContent=document.getElementById('s-name').value||'Minha conta'}
