@@ -360,6 +360,94 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 .ni.locked .lock-dot{display:block}
 </style>
 <!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdsAHoraoKLtJ25MOZ234BQIlmQrzEWoQ",
+    authDomain: "creator-hub-893e2.firebaseapp.com",
+    projectId: "creator-hub-893e2",
+    storageBucket: "creator-hub-893e2.firebasestorage.app",
+    messagingSenderId: "371392322617",
+    appId: "1:371392322617:web:9e11ba0338224fbb2281e8"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const FM = { doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp };
+  window._fbAuth = auth; window._fbDb = db;
+  window._fbFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, ...FM };
+  window.fbDoc = (...a) => FM.doc(db, ...a);
+  window.fbCol = (p) => FM.collection(db, p);
+  window.fbGet = (r) => FM.getDoc(r);
+  window.fbSet = (r, d, o) => FM.setDoc(r, d, o||{});
+  window.fbGets = (r) => FM.getDocs(r);
+  window.fbAdd = (r, d) => FM.addDoc(r, d);
+  window.fbQ = (...a) => FM.query(...a);
+  window.fbOB = FM.orderBy;
+  window.fbLim = FM.limit;
+  window.fbSnap = FM.onSnapshot;
+
+  window.ensureProfile = async (user) => {
+    try {
+      const ref = FM.doc(db, 'profiles', user.uid);
+      const snap = await FM.getDoc(ref);
+      const ex = snap.exists() ? snap.data() : {};
+      await FM.setDoc(ref, { uid: user.uid, name: user.displayName||user.email.split('@')[0], email: user.email, photo: user.photoURL||'', bio: ex.bio||'', channel: ex.channel||'', followers: ex.followers||[], following: ex.following||[], updatedAt: Date.now() }, { merge: true });
+    } catch(e) { console.error('ensureProfile:', e); }
+  };
+
+  window.fbSave = async (uid, key, data) => {
+    try { await FM.setDoc(FM.doc(db, 'users', uid, 'data', key), { value: JSON.stringify(data) }); } catch(e) {}
+  };
+  window.fbLoad = async (uid, key) => {
+    try { const s = await FM.getDoc(FM.doc(db, 'users', uid, 'data', key)); return s.exists() ? JSON.parse(s.data().value) : null; } catch(e) { return null; }
+  };
+
+  window.syncAll = async (uid) => {
+    try {
+      const keys = ['tasks','recs','events','shorts','history','profile'];
+      const results = await Promise.all(keys.map(k => window.fbLoad(uid, k)));
+      keys.forEach((k, i) => { if (results[i]) localStorage.setItem('ch_' + (k==='events'?'evs':k==='profile'?'prof':k), JSON.stringify(results[i])); });
+      if (typeof tasks !== 'undefined' && results[0]) { tasks.length=0; results[0].forEach(x=>tasks.push(x)); }
+      if (typeof recs !== 'undefined' && results[1]) { recs.length=0; results[1].forEach(x=>recs.push(x)); }
+      if (typeof events !== 'undefined' && results[2]) { events.length=0; results[2].forEach(x=>events.push(x)); }
+      if (typeof renderDTasks === 'function') renderDTasks();
+      if (typeof renderDRecs === 'function') renderDRecs();
+      if (typeof loadProfile === 'function') loadProfile();
+    } catch(e) { console.error('syncAll:', e); }
+  };
+
+  onAuthStateChanged(auth, user => {
+    window._fbUser = user;
+    if (user) {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'flex';
+      window.ensureProfile(user);
+      window.syncAll(user.uid);
+      const name = user.displayName || user.email.split('@')[0];
+      ['sb-name','p-name'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = name; });
+      const em = document.getElementById('p-email');
+      if(em) em.textContent = user.email;
+      // Show welcome animation
+      showWelcome(name);
+    } else {
+      document.getElementById('auth-screen').style.display = 'flex';
+      document.getElementById('app-screen').style.display = 'none';
+    }
+  });
+
+  window.fbRegister = async (email, password, name) => {
+    const c = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(c.user, { displayName: name });
+    await window.ensureProfile(c.user);
+    return c.user;
+  };
+  window.fbLogin = async (email, password) => { const c = await signInWithEmailAndPassword(auth, email, password); return c.user; };
+  window.fbLogout = async () => { await signOut(auth); };
+</script>
+
 
 </head>
 <body>
@@ -1218,93 +1306,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 .ni.locked .lock-dot{display:block}
 </style>
 <!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  const firebaseConfig = {
-    apiKey: "AIzaSyAdsAHoraoKLtJ25MOZ234BQIlmQrzEWoQ",
-    authDomain: "creator-hub-893e2.firebaseapp.com",
-    projectId: "creator-hub-893e2",
-    storageBucket: "creator-hub-893e2.firebasestorage.app",
-    messagingSenderId: "371392322617",
-    appId: "1:371392322617:web:9e11ba0338224fbb2281e8"
-  };
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const FM = { doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp };
-  window._fbAuth = auth; window._fbDb = db;
-  window._fbFns = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, ...FM };
-  window.fbDoc = (...a) => FM.doc(db, ...a);
-  window.fbCol = (p) => FM.collection(db, p);
-  window.fbGet = (r) => FM.getDoc(r);
-  window.fbSet = (r, d, o) => FM.setDoc(r, d, o||{});
-  window.fbGets = (r) => FM.getDocs(r);
-  window.fbAdd = (r, d) => FM.addDoc(r, d);
-  window.fbQ = (...a) => FM.query(...a);
-  window.fbOB = FM.orderBy;
-  window.fbLim = FM.limit;
-  window.fbSnap = FM.onSnapshot;
 
-  window.ensureProfile = async (user) => {
-    try {
-      const ref = FM.doc(db, 'profiles', user.uid);
-      const snap = await FM.getDoc(ref);
-      const ex = snap.exists() ? snap.data() : {};
-      await FM.setDoc(ref, { uid: user.uid, name: user.displayName||user.email.split('@')[0], email: user.email, photo: user.photoURL||'', bio: ex.bio||'', channel: ex.channel||'', followers: ex.followers||[], following: ex.following||[], updatedAt: Date.now() }, { merge: true });
-    } catch(e) { console.error('ensureProfile:', e); }
-  };
-
-  window.fbSave = async (uid, key, data) => {
-    try { await FM.setDoc(FM.doc(db, 'users', uid, 'data', key), { value: JSON.stringify(data) }); } catch(e) {}
-  };
-  window.fbLoad = async (uid, key) => {
-    try { const s = await FM.getDoc(FM.doc(db, 'users', uid, 'data', key)); return s.exists() ? JSON.parse(s.data().value) : null; } catch(e) { return null; }
-  };
-
-  window.syncAll = async (uid) => {
-    try {
-      const keys = ['tasks','recs','events','shorts','history','profile'];
-      const results = await Promise.all(keys.map(k => window.fbLoad(uid, k)));
-      keys.forEach((k, i) => { if (results[i]) localStorage.setItem('ch_' + (k==='events'?'evs':k==='profile'?'prof':k), JSON.stringify(results[i])); });
-      if (typeof tasks !== 'undefined' && results[0]) { tasks.length=0; results[0].forEach(x=>tasks.push(x)); }
-      if (typeof recs !== 'undefined' && results[1]) { recs.length=0; results[1].forEach(x=>recs.push(x)); }
-      if (typeof events !== 'undefined' && results[2]) { events.length=0; results[2].forEach(x=>events.push(x)); }
-      if (typeof renderDTasks === 'function') renderDTasks();
-      if (typeof renderDRecs === 'function') renderDRecs();
-      if (typeof loadProfile === 'function') loadProfile();
-    } catch(e) { console.error('syncAll:', e); }
-  };
-
-  onAuthStateChanged(auth, user => {
-    window._fbUser = user;
-    if (user) {
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app-screen').style.display = 'flex';
-      window.ensureProfile(user);
-      window.syncAll(user.uid);
-      const name = user.displayName || user.email.split('@')[0];
-      ['sb-name','p-name'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = name; });
-      const em = document.getElementById('p-email');
-      if(em) em.textContent = user.email;
-      // Show welcome animation
-      showWelcome(name);
-    } else {
-      document.getElementById('auth-screen').style.display = 'flex';
-      document.getElementById('app-screen').style.display = 'none';
-    }
-  });
-
-  window.fbRegister = async (email, password, name) => {
-    const c = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(c.user, { displayName: name });
-    await window.ensureProfile(c.user);
-    return c.user;
-  };
-  window.fbLogin = async (email, password) => { const c = await signInWithEmailAndPassword(auth, email, password); return c.user; };
-  window.fbLogout = async () => { await signOut(auth); };
-</script>
 </head>
 <body>
 
