@@ -457,12 +457,12 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
     <div style="text-align:center;opacity:0;animation:textIn .5s .7s ease forwards">
       <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--txt2);margin-bottom:10px">Creator Hub</div>
       <div id="wl-greeting" style="font-family:var(--serif);font-size:28px;font-style:italic;color:var(--txt0);line-height:1.3">Bem-vindo de volta</div>
-      <div id="wl-sub" style="font-size:13px;color:var(--txt2);margin-top:8px;line-height:1.6">Estamos preparando tudo para você...</div>
+      <div id="wl-sub" style="font-size:12px;color:var(--txt2);margin-top:10px;line-height:1.7;max-width:340px;text-align:center;min-height:52px">Estamos preparando tudo para você...</div>
     </div>
     <div style="width:200px;height:1px;background:var(--bg3);border-radius:1px;overflow:hidden;opacity:0;animation:textIn .4s 1s ease forwards">
-      <div id="wl-bar" style="height:100%;background:var(--acc);width:0%;transition:width .1s linear;border-radius:1px"></div>
+      <div id="wl-bar" style="height:100%;background:var(--acc);width:0%;transition:width 1.2s cubic-bezier(.4,0,.2,1);border-radius:1px"></div>
     </div>
-    <div id="wl-status" style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--txt3);opacity:0;animation:textIn .4s 1.1s ease forwards">Autenticando sessão</div>
+    <div id="wl-status" style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--txt3);opacity:0;animation:textIn .4s 1.1s ease forwards;transition:opacity .15s ease">Autenticando sessão</div>
   </div>
 </div>
 
@@ -1124,36 +1124,90 @@ function showWelcome(userName) {
   const screen = document.getElementById('welcome-screen');
   if (!screen) return;
   screen.style.display = 'flex';
-  // Set greeting
+
+  const FACTS = [
+    'Os primeiros 48 horas após a publicação são cruciais — o algoritmo decide o alcance do vídeo nesse período.',
+    'Canais que postam consistentemente por 6 meses seguidos têm 3x mais chance de crescer organicamente.',
+    'Thumbnails com rostos humanos recebem em média 38% mais cliques do que thumbnails sem pessoas.',
+    'O título ideal para o YouTube tem entre 40 e 60 caracteres — nem curto demais, nem longo demais.',
+    'Vídeos com capítulos (timestamps) têm retenção 15% maior porque o espectador sente controle.',
+    'Os primeiros 30 segundos do vídeo determinam se alguém assiste até o fim. Corte qualquer introdução longa.',
+    'Responder comentários nas primeiras 2 horas após publicar aumenta significativamente o engajamento.',
+    'O YouTube valoriza o tempo total assistido mais do que o número de visualizações individuais.',
+    'Playlists bem organizadas podem dobrar o tempo que um visitante passa no seu canal.',
+    'Canais de nicho específico crescem até 4x mais rápido do que canais generalistas no início.',
+    'Vídeos publicados entre terça e quinta, às 14h ou 20h, têm em média maior alcance inicial.',
+    'O CTR (taxa de clique) ideal fica entre 4% e 10%. Abaixo disso, a thumbnail precisa ser repensada.',
+    'Usar a palavra "você" no título aumenta o CTR porque cria conexão direta com o espectador.',
+    'O YouTube Shorts pode trazer novos inscritos para o canal principal em até 3x mais velocidade.',
+    'Criadores que estudam os próprios Analytics crescem 2x mais rápido do que os que ignoram os dados.',
+    'Um vídeo evergreen (conteúdo atemporal) pode gerar views por anos — invista nisso antes de trends.',
+    'A retenção acima de 50% é considerada excelente pelo algoritmo e aumenta a distribuição orgânica.',
+    'Colaborações com canais do mesmo nicho são a forma mais rápida de ganhar inscritos qualificados.',
+    'A maioria dos canais que chegam a 10.000 inscritos leva entre 18 e 36 meses de publicação constante.',
+    'Criar uma comunidade engajada vale mais do que ter muitos inscritos passivos — qualidade > quantidade.',
+  ];
+
   const greeting = document.getElementById('wl-greeting');
   const sub = document.getElementById('wl-sub');
   const status = document.getElementById('wl-status');
   const bar = document.getElementById('wl-bar');
+
+  // Set greeting
   if (greeting) {
     const hour = new Date().getHours();
     const timeGreet = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
     greeting.textContent = userName ? timeGreet + ', ' + userName.split(' ')[0] + '.' : 'Bem-vindo de volta.';
   }
-  // Animate progress bar with status messages
+
+  // Rotate facts every 4.5s
+  let factIdx = Math.floor(Math.random() * FACTS.length);
+  if (sub) {
+    sub.style.transition = 'opacity .4s ease';
+    sub.textContent = FACTS[factIdx];
+  }
+  const factInterval = setInterval(() => {
+    factIdx = (factIdx + 1) % FACTS.length;
+    if (sub) {
+      sub.style.opacity = '0';
+      setTimeout(() => {
+        sub.textContent = FACTS[factIdx];
+        sub.style.opacity = '1';
+      }, 400);
+    }
+  }, 4500);
+
+  // Progress bar steps over 15 seconds
   const steps = [
-    { pct: 20, msg: 'Autenticando sessão', delay: 400 },
-    { pct: 45, msg: 'Sincronizando dados', delay: 900 },
-    { pct: 70, msg: 'Carregando preferências', delay: 1400 },
-    { pct: 90, msg: 'Preparando seu espaço', delay: 1900 },
-    { pct: 100, msg: 'Tudo pronto', delay: 2300 },
+    { pct: 8,   msg: 'Autenticando sessão',       delay: 400   },
+    { pct: 20,  msg: 'Verificando credenciais',   delay: 1500  },
+    { pct: 35,  msg: 'Sincronizando tarefas',     delay: 3000  },
+    { pct: 48,  msg: 'Carregando gravações',      delay: 4500  },
+    { pct: 60,  msg: 'Atualizando calendário',    delay: 6000  },
+    { pct: 72,  msg: 'Carregando preferências',   delay: 7500  },
+    { pct: 82,  msg: 'Sincronizando histórico',   delay: 9000  },
+    { pct: 91,  msg: 'Preparando seu espaço',     delay: 11000 },
+    { pct: 97,  msg: 'Quase lá...',               delay: 13000 },
+    { pct: 100, msg: 'Tudo pronto ✓',             delay: 14500 },
   ];
+
   steps.forEach(step => {
     setTimeout(() => {
       if (bar) bar.style.width = step.pct + '%';
-      if (status) status.textContent = step.msg;
+      if (status) {
+        status.style.opacity = '0';
+        setTimeout(() => { status.textContent = step.msg; status.style.opacity = '1'; }, 150);
+      }
     }, step.delay);
   });
-  // Hide welcome screen and show app
+
+  // Hide after 15s
   setTimeout(() => {
-    screen.style.transition = 'opacity .5s ease';
+    clearInterval(factInterval);
+    screen.style.transition = 'opacity .6s ease';
     screen.style.opacity = '0';
-    setTimeout(() => { screen.style.display = 'none'; screen.style.opacity = '1'; }, 500);
-  }, 2800);
+    setTimeout(() => { screen.style.display = 'none'; screen.style.opacity = ''; }, 600);
+  }, 15200);
 }
 
 // AUTH
