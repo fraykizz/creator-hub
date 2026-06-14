@@ -309,6 +309,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .mg2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mfoot{display:flex;gap:7px;justify-content:flex-end;margin-top:14px}
 canvas{border-radius:8px;background:var(--bg2);display:block}
+#xp-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:9px 16px;font-size:11px;color:var(--txt1);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:200;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
 /* MOBILE */
@@ -542,6 +543,14 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   <div class="ni" data-p="feedback" onclick="go('feedback')"><i class="ti ti-message-star"></i><span>Feedback</span></div>
   <div class="sb-sep"></div>
   <div class="sb-btm">
+    <div id="xp-sb-wrap" style="width:100%;padding:0 8px;margin-bottom:6px;display:none">
+      <div id="xp-level-badge" style="font-size:9px;color:var(--acc2);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🌱 Iniciante</div>
+      <div style="height:3px;background:var(--bg3);border-radius:2px;overflow:hidden">
+        <div id="xp-bar-fill" style="height:100%;background:var(--acc);width:0%;transition:width 1s ease;border-radius:2px"></div>
+      </div>
+      <div id="xp-bar-label" style="font-size:8px;color:var(--txt3);margin-top:3px;text-align:right">0 / 100 XP</div>
+    </div>
+    <div class="ni" data-p="xp" onclick="go('xp')"><i class="ti ti-star"></i><span>Meu XP</span></div>
     <div class="ni" data-p="settings" onclick="go('settings')"><i class="ti ti-adjustments-horizontal"></i><span>Configurações</span></div>
     <div class="av-sb" onclick="go('settings')"><i class="ti ti-user-circle" id="sb-ic"></i><img id="sb-img" alt=""><span class="avname" id="sb-name">Minha conta</span></div>
   </div>
@@ -746,6 +755,13 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       </div>
     </div>
   </section>
+  <!-- XP PAGE -->
+  <section class="pg" id="pg-xp">
+    <div class="scr" style="max-width:680px;margin:0 auto;width:100%">
+      <div id="xp-content"></div>
+    </div>
+  </section>
+
   <!-- SQUAD -->
   <section class="pg" id="pg-squad"><div class="scr" id="squad-scr" style="max-width:680px;margin:0 auto;width:100%"><div class="empty"><i class="ti ti-users-group"></i>Carregando squad...</div></div></section>
   <!-- CHAT -->
@@ -847,6 +863,17 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="xp-toast" style="position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(40px);background:color-mix(in srgb,var(--acc) 15%,var(--bg2));border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);border-radius:8px;padding:8px 16px;font-size:11px;color:var(--acc2);transition:transform .3s ease,opacity .3s ease;z-index:200;white-space:nowrap;pointer-events:none;opacity:0;font-weight:600"></div>
+
+<!-- LEVEL UP OVERLAY -->
+<div class="ov" id="levelup-overlay" style="z-index:300">
+  <div style="background:var(--bg1);border:1px solid var(--bg3);border-radius:16px;padding:36px;text-align:center;animation:fadeSlideIn .4s ease;max-width:280px">
+    <div id="lu-icon" style="font-size:52px;display:block;margin-bottom:12px;animation:logoIn .5s cubic-bezier(.34,1.56,.64,1)">⭐</div>
+    <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc2);margin-bottom:8px">Subiu de nível!</div>
+    <div id="lu-title" style="font-family:var(--serif);font-size:22px;font-style:italic;color:var(--txt0);margin-bottom:6px">Nível 2 — Criador</div>
+    <div id="lu-sub" style="font-size:12px;color:var(--txt2)">Parabéns! Continue assim.</div>
+  </div>
+</div>
 <script>
 // ── THEMES ──
 const THEMES=[
@@ -918,11 +945,17 @@ function _goBase(p){
   if(p==='history')renderHistory();
   if(p==='checklist')renderChecklist();
   if(p==='squad')renderSquad();
+  if(p==='xp'){renderXPPage();}
   if(p==='chat')loadConvs();
   if(p==='people'){loadPeople();loadCommProfile();}
   if(p==='feedback')loadFbs();
 }
-function toggleSb(){document.getElementById('sb').classList.toggle('open')}
+function toggleSb(){
+  const sb = document.getElementById('sb');
+  sb.classList.toggle('open');
+  const xpWrap = document.getElementById('xp-sb-wrap');
+  if (xpWrap) xpWrap.style.display = sb.classList.contains('open') ? 'block' : 'none';
+}
 function mobileAct(el){document.querySelectorAll('.mn-item').forEach(i=>i.classList.remove('act'));el.classList.add('act')}
 function toggleMore(el){const m=document.getElementById('mn-more');m.classList.toggle('open');el.classList.toggle('act',m.classList.contains('open'))}
 function closeMore(){document.getElementById('mn-more')?.classList.remove('open')}
@@ -952,7 +985,7 @@ function renderTaskRows(el,list,mini){
     const idx=tasks.indexOf(task);const cat=TCATS[task.cat]||TCATS.s;const dl=dateLabel(task.date);
     const d=document.createElement('div');d.className='trow';
     d.innerHTML='<div class="tck'+(task.done?' on':'')+'"></div><span class="tlbl'+(task.done?' done':'')+'">'+task.name+'</span>'+(!mini?'<span class="ttag '+cat.c+'">'+cat.l+'</span>':'')+(dl&&!mini?'<span class="tdate '+dl.cls+'">'+dl.txt+'</span>':'')+(dl&&mini&&dl.cls==='overdue'?'<span class="tdate overdue">'+dl.txt+'</span>':'')+'<button class="xb"><i class="ti ti-x"></i></button>';
-    d.querySelector('.tck').onclick=()=>{tasks[idx].done=!tasks[idx].done;saveTasks();renderTaskRows(el,list,mini)};
+    d.querySelector('.tck').onclick=()=>{tasks[idx].done=!tasks[idx].done;saveTasks();renderTaskRows(el,list,mini);if(tasks[idx].done)awardXP('task_complete')};
     d.querySelector('.xb').onclick=()=>{tasks.splice(idx,1);saveTasks();renderTaskRows(el,list,mini);renderDTasks()};
     el.appendChild(d);
   });
@@ -1064,14 +1097,14 @@ function reqRow(label,val,ok,prog){return'<div style="background:var(--bg3);bord
 
 // SHORTS
 function renderShorts(){const el=document.getElementById('shorts-list');if(!el)return;if(!shorts.length){el.innerHTML='<div class="empty"><i class="ti ti-device-mobile"></i>Nenhum Short planejado ainda.</div>';return}el.innerHTML='';shorts.forEach((s,i)=>{const st=SHORT_ST[s.st]||SHORT_ST.idea;const dl=dateLabel(s.date);const d=document.createElement('div');d.className='trow';d.innerHTML='<i class="ti ti-device-mobile" style="font-size:14px;color:var(--txt2);flex-shrink:0"></i><span class="tlbl">'+s.name+'</span><span class="ttag '+st.c+'">'+st.l+'</span>'+(dl?'<span class="tdate '+dl.cls+'">'+dl.txt+'</span>':'')+'<button class="xb" style="opacity:1"><i class="ti ti-x"></i></button>';d.querySelector('.xb').onclick=()=>{shorts.splice(i,1);saveShorts();renderShorts()};el.appendChild(d)})}
-function addShort(){const v=document.getElementById('sh-inp').value.trim();if(!v)return;const s={id:Date.now()+'',name:v,date:document.getElementById('sh-dt').value,st:document.getElementById('sh-st').value};shorts.unshift(s);saveShorts();renderShorts();if(s.date){events.push({id:'short_'+s.id,title:'🎬 Short: '+v,type:'rec',date:s.date,time:'',note:'Short'});saveEvs()}document.getElementById('sh-inp').value='';toast('Short adicionado')}
+function addShort(){const v=document.getElementById('sh-inp').value.trim();if(!v)return;const s={id:Date.now()+'',name:v,date:document.getElementById('sh-dt').value,st:document.getElementById('sh-st').value};shorts.unshift(s);saveShorts();renderShorts();if(s.date){events.push({id:'short_'+s.id,title:'🎬 Short: '+v,type:'rec',date:s.date,time:'',note:'Short'});saveEvs()}document.getElementById('sh-inp').value='';toast('Short adicionado');awardXP('short_added')}
 
 // HISTORY
 function renderHistory(){const listEl=document.getElementById('history-list');const canvas=document.getElementById('history-chart');if(!listEl||!canvas)return;if(!growthHistory.length){listEl.innerHTML='<div class="empty"><i class="ti ti-chart-line"></i>Registre seu primeiro dado acima.</div>';canvas.style.display='none';return}canvas.style.display='block';const W=canvas.offsetWidth||500,H=180;canvas.width=W;canvas.height=H;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);const maxSubs=Math.max(...growthHistory.map(e=>e.subs),1);const pts=growthHistory.map((e,i)=>({x:(i/Math.max(growthHistory.length-1,1))*(W-40)+20,y:H-20-((e.subs/maxSubs)*(H-40))}));const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'rgba(200,169,110,.35)');grad.addColorStop(1,'rgba(200,169,110,0)');ctx.beginPath();ctx.moveTo(pts[0].x,H-20);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(pts[pts.length-1].x,H-20);ctx.closePath();ctx.fillStyle=grad;ctx.fill();ctx.beginPath();ctx.strokeStyle='#c8a96e';ctx.lineWidth=2;pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.stroke();pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fillStyle='#c8a96e';ctx.fill()});listEl.innerHTML=growthHistory.slice().reverse().map((e,i)=>{const prev=growthHistory[growthHistory.length-2-i];const diff=prev?e.subs-prev.subs:0;return'<div class="trow"><span class="tdate">'+e.date+'</span><span class="tlbl" style="text-align:right">'+fmtNum(e.subs)+' inscritos</span>'+(diff>0?'<span style="font-size:10px;color:var(--green)">+'+diff+'</span>':'')+'<button class="xb" style="opacity:1" onclick="growthHistory.splice('+(growthHistory.length-1-i)+',1);saveHistory();renderHistory()"><i class="ti ti-x"></i></button></div>'}).join('')}
-function addHistory(){const subs=parseInt(document.getElementById('h-subs').value);const dt=document.getElementById('h-dt').value;if(!dt||isNaN(subs)){toast('Preencha inscritos e data');return}growthHistory.push({date:dt,subs,views:parseInt(document.getElementById('h-views').value)||0});growthHistory.sort((a,b)=>a.date.localeCompare(b.date));saveHistory();renderHistory();document.getElementById('h-subs').value='';document.getElementById('h-views').value='';toast('Entrada registrada')}
+function addHistory(){const subs=parseInt(document.getElementById('h-subs').value);const dt=document.getElementById('h-dt').value;if(!dt||isNaN(subs)){toast('Preencha inscritos e data');return}growthHistory.push({date:dt,subs,views:parseInt(document.getElementById('h-views').value)||0});growthHistory.sort((a,b)=>a.date.localeCompare(b.date));saveHistory();renderHistory();document.getElementById('h-subs').value='';document.getElementById('h-views').value='';toast('Entrada registrada');awardXP('history_entry')}
 
 // CHECKLIST
-function renderChecklist(){const el=document.getElementById('checklist-items');if(!el)return;const done=checklistItems.filter(i=>i.done).length;el.innerHTML='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px"><span>'+done+' de '+checklistItems.length+' concluídos</span><span>'+Math.round((done/checklistItems.length)*100)+'%</span></div><div class="mbar"><div class="mfill" style="width:'+Math.round((done/checklistItems.length)*100)+'%;background:'+(done===checklistItems.length?'var(--green)':'var(--acc)')+'"></div></div></div>';checklistItems.forEach((item,i)=>{const d=document.createElement('div');d.className='trow';d.innerHTML='<div class="tck'+(item.done?' on':'')+'"></div><span class="tlbl'+(item.done?' done':'')+'">'+item.text+'</span>';d.querySelector('.tck').onclick=()=>{checklistItems[i].done=!checklistItems[i].done;saveChecklist();renderChecklist()};el.appendChild(d)})}
+function renderChecklist(){const el=document.getElementById('checklist-items');if(!el)return;const done=checklistItems.filter(i=>i.done).length;el.innerHTML='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px"><span>'+done+' de '+checklistItems.length+' concluídos</span><span>'+Math.round((done/checklistItems.length)*100)+'%</span></div><div class="mbar"><div class="mfill" style="width:'+Math.round((done/checklistItems.length)*100)+'%;background:'+(done===checklistItems.length?'var(--green)':'var(--acc)')+'"></div></div></div>';checklistItems.forEach((item,i)=>{const d=document.createElement('div');d.className='trow';d.innerHTML='<div class="tck'+(item.done?' on':'')+'"></div><span class="tlbl'+(item.done?' done':'')+'">'+item.text+'</span>';d.querySelector('.tck').onclick=()=>{checklistItems[i].done=!checklistItems[i].done;saveChecklist();renderChecklist();if(checklistItems.every(x=>x.done))awardXP('checklist_done')};el.appendChild(d)})}
 function resetChecklist(){if(!confirm('Resetar checklist?'))return;checklistItems=CHECKLIST_DEFAULT.map(i=>({...i,done:false}));saveChecklist();renderChecklist()}
 function copyTitle(el){const t=el.getAttribute('data-title');navigator.clipboard.writeText(t).then(()=>toast('Título copiado!'))}
 function genTitles(){const inp=document.getElementById('title-inp');const desc=inp.value.trim();if(!desc){toast('Descreva seu vídeo primeiro');return}const out=document.getElementById('titles-out');out.innerHTML='<div class="tdots" style="padding:10px 0"><span></span><span></span><span></span></div>';setTimeout(()=>{const w=desc.toLowerCase();const isHowTo=w.includes('como')||w.includes('tutorial')||w.includes('fazer');const isReview=w.includes('review')||w.includes('testei')||w.includes('vale');const d=desc.charAt(0).toUpperCase()+desc.slice(1);let titles=isHowTo?[d+' passo a passo (do jeito certo)','O guia COMPLETO de '+desc.toLowerCase()+' que ninguém fez ainda',desc.toLowerCase()+': Aprenda em '+(Math.floor(Math.random()*15)+5)+' minutos','Fiz '+desc.toLowerCase()+' por 30 dias — o que ninguém te conta','Por que todo mundo erra em '+desc.toLowerCase()+' (e como acertar)']:isReview?[d+': VALE A PENA? Testei por 2 semanas','Honestamente: '+d+' (minha experiência real)',d+' — o que as reviews não mostram','Comprei '+d+' — foi um erro?',d+': Depois de '+(Math.floor(Math.random()*6)+2)+' meses de uso']:[d+' — o que ninguém está falando','Tudo que você precisa saber sobre '+desc.toLowerCase(),d+': minha experiência honesta','Por que '+desc.toLowerCase()+' mudou minha rotina completamente',d+' em '+(Math.floor(Math.random()*8)+3)+' minutos (sem enrolação)'];out.innerHTML='<div style="font-size:9px;color:var(--txt2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;padding:0 2px">Clique para copiar</div>'+titles.map((t,i)=>{const safe=t.replace(/"/g,'&quot;');const chars=t.length;const cc=chars<=60?'var(--green)':chars<=70?'var(--amber)':'var(--red)';return'<div class="trow" style="cursor:pointer;padding:9px 6px" onclick="copyTitle(this)" data-title="'+safe+'"><span style="font-size:10px;color:var(--acc2);font-weight:600;flex-shrink:0;width:16px">'+(i+1)+'</span><span class="tlbl" style="line-height:1.5">'+t+'</span><span style="font-size:9px;color:'+cc+';flex-shrink:0">'+chars+'</span><i class="ti ti-copy" style="font-size:12px;color:var(--txt2);flex-shrink:0"></i></div>'}).join('')},800)}
@@ -1109,7 +1142,7 @@ async function doFollow(){const uid=viewingUid;const me=window._fbUser;if(!me||!
 // FEEDBACK
 let fbType='suggestion';
 function setFbType(el){fbType=el.dataset.ft;document.querySelectorAll('#fb-types .tp').forEach(t=>t.classList.toggle('on',t===el))}
-async function submitFb(){const msg=document.getElementById('fb-msg').value.trim();if(!msg){toast('Escreva uma mensagem primeiro');return}if(!window._fbUser){toast('Faça login para enviar feedback');return}if(!window.fbSet||!window.fbDoc){toast('Firebase não carregado ainda');return}try{const user=window._fbUser;await window.fbSet(window.fbDoc('feedbacks',Date.now()+'_'+user.uid),{type:fbType,message:msg,author:user.displayName||user.email.split('@')[0],uid:user.uid,photo:user.photoURL||'',createdAt:Date.now(),date:new Date().toLocaleDateString('pt-BR')});document.getElementById('fb-msg').value='';toast('Feedback enviado! Obrigado 💛');loadFbs()}catch(e){toast('Erro: '+e.message);console.error(e)}}
+async function submitFb(){const msg=document.getElementById('fb-msg').value.trim();if(!msg){toast('Escreva uma mensagem primeiro');return}if(!window._fbUser){toast('Faça login para enviar feedback');return}if(!window.fbSet||!window.fbDoc){toast('Firebase não carregado ainda');return}try{const user=window._fbUser;await window.fbSet(window.fbDoc('feedbacks',Date.now()+'_'+user.uid),{type:fbType,message:msg,author:user.displayName||user.email.split('@')[0],uid:user.uid,photo:user.photoURL||'',createdAt:Date.now(),date:new Date().toLocaleDateString('pt-BR')});document.getElementById('fb-msg').value='';toast('Feedback enviado! Obrigado 💛');awardXP('feedback_sent');loadFbs()}catch(e){toast('Erro: '+e.message);console.error(e)}}
 async function loadFbs(){const el=document.getElementById('fb-list');if(!el||!window._fbUser||!window.fbGets||!window.fbCol)return;el.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';try{const snap=await window.fbGets(window.fbCol('feedbacks'));const items=[];snap.forEach(d=>items.push(d.data()));items.sort((a,b)=>b.createdAt-a.createdAt);if(!items.length){el.innerHTML='<div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda. Seja o primeiro!</div>';return}const tl={suggestion:'💡 Sugestão',bug:'🐛 Bug',idea:'✨ Ideia',compliment:'❤️ Elogio'};el.innerHTML='';items.forEach(fb=>{const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg3);cursor:pointer';row.onclick=()=>viewProfile(fb.uid);const av=document.createElement('div');av.style.cssText='width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden';av.innerHTML=fb.photo?'<img src="'+fb.photo+'" style="width:100%;height:100%;object-fit:cover">':'<i class="ti ti-user" style="font-size:14px;color:var(--acc2)"></i>';const content=document.createElement('div');content.style.flex='1';const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap';const nm=document.createElement('span');nm.style.cssText='font-size:12px;color:var(--txt1);font-weight:500';nm.textContent=fb.author;const tag=document.createElement('span');tag.style.cssText='font-size:9px;padding:1px 7px;border-radius:20px;background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc2)';tag.textContent=tl[fb.type]||fb.type;const dt=document.createElement('span');dt.style.cssText='font-size:9px;color:var(--txt3);margin-left:auto';dt.textContent=fb.date;hdr.appendChild(nm);hdr.appendChild(tag);hdr.appendChild(dt);const msg=document.createElement('div');msg.style.cssText='font-size:12px;color:var(--txt1);line-height:1.65';msg.textContent=fb.message;content.appendChild(hdr);content.appendChild(msg);row.appendChild(av);row.appendChild(content);el.appendChild(row)})}catch(e){el.innerHTML='<div class="empty"><i class="ti ti-alert-triangle"></i>Erro: '+e.message+'</div>';console.error(e)}}
 
 // PROFILE & SETTINGS
@@ -1464,6 +1497,159 @@ function showLockScreen(p) {
   overlay.appendChild(lockIcon); overlay.appendChild(lockTitle);
   overlay.appendChild(lockSub); overlay.appendChild(lockBtns);
   document.body.appendChild(overlay);
+}
+
+
+// ── SISTEMA DE XP ──
+const XP_LEVELS = [
+  { level: 1,  xp: 0,     title: 'Iniciante',    icon: '🌱' },
+  { level: 2,  xp: 100,   title: 'Criador',      icon: '✏️' },
+  { level: 3,  xp: 250,   title: 'Produtor',     icon: '🎬' },
+  { level: 4,  xp: 500,   title: 'Publicador',   icon: '📤' },
+  { level: 5,  xp: 900,   title: 'Influencer',   icon: '📈' },
+  { level: 6,  xp: 1500,  title: 'Profissional', icon: '💼' },
+  { level: 7,  xp: 2500,  title: 'Especialista', icon: '🏆' },
+  { level: 8,  xp: 4000,  title: 'Estrela',      icon: '⭐' },
+  { level: 9,  xp: 6500,  title: 'Lenda',        icon: '👑' },
+  { level: 10, xp: 10000, title: 'Elite',        icon: '💎' },
+];
+
+const XP_ACTIONS = {
+  daily_login:      { xp: 20,  label: 'Login diário'       },
+  task_complete:    { xp: 50,  label: 'Tarefa concluída'   },
+  rec_published:    { xp: 80,  label: 'Gravação publicada' },
+  short_added:      { xp: 25,  label: 'Short adicionado'   },
+  feedback_sent:    { xp: 100, label: 'Feedback enviado'   },
+  history_entry:    { xp: 30,  label: 'Crescimento registrado' },
+  checklist_done:   { xp: 150, label: 'Checklist completo' },
+  squad_task:       { xp: 40,  label: 'Tarefa de squad'    },
+};
+
+function getXPData() {
+  return JSON.parse(localStorage.getItem('ch_xp') || '{"total":0,"log":[],"lastLogin":""}');
+}
+
+function saveXPData(data) {
+  localStorage.setItem('ch_xp', JSON.stringify(data));
+  if (window._fbUser && window.fbSave) window.fbSave(window._fbUser.uid, 'xp', data).catch(()=>{});
+}
+
+function getCurrentLevel(totalXP) {
+  let current = XP_LEVELS[0];
+  for (const lvl of XP_LEVELS) {
+    if (totalXP >= lvl.xp) current = lvl;
+    else break;
+  }
+  return current;
+}
+
+function getNextLevel(totalXP) {
+  for (const lvl of XP_LEVELS) {
+    if (totalXP < lvl.xp) return lvl;
+  }
+  return null;
+}
+
+function getXPProgress(totalXP) {
+  const current = getCurrentLevel(totalXP);
+  const next = getNextLevel(totalXP);
+  if (!next) return { pct: 100, current, next: null, xpInLevel: 0, xpNeeded: 0 };
+  const xpInLevel = totalXP - current.xp;
+  const xpNeeded = next.xp - current.xp;
+  return { pct: Math.round((xpInLevel / xpNeeded) * 100), current, next, xpInLevel, xpNeeded };
+}
+
+function awardXP(action) {
+  const info = XP_ACTIONS[action];
+  if (!info) return;
+  const data = getXPData();
+  const before = getCurrentLevel(data.total);
+  data.total += info.xp;
+  data.log.unshift({ action, xp: info.xp, label: info.label, date: new Date().toLocaleDateString('pt-BR'), ts: Date.now() });
+  if (data.log.length > 50) data.log = data.log.slice(0, 50);
+  saveXPData(data);
+  const after = getCurrentLevel(data.total);
+  // Show XP toast
+  showXPToast('+' + info.xp + ' XP — ' + info.label);
+  // Level up animation
+  if (after.level > before.level) {
+    setTimeout(() => showLevelUp(after), 600);
+  }
+  // Update XP bar in sidebar
+  updateXPBar();
+}
+
+function showXPToast(msg) {
+  const t = document.getElementById('xp-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function showLevelUp(level) {
+  const el = document.getElementById('levelup-overlay');
+  if (!el) return;
+  document.getElementById('lu-icon').textContent = level.icon;
+  document.getElementById('lu-title').textContent = 'Nível ' + level.level + ' — ' + level.title;
+  document.getElementById('lu-sub').textContent = 'Parabéns! Você subiu de nível.';
+  el.classList.add('open');
+  setTimeout(() => el.classList.remove('open'), 3500);
+}
+
+function updateXPBar() {
+  const data = getXPData();
+  const prog = getXPProgress(data.total);
+  const bar = document.getElementById('xp-bar-fill');
+  const label = document.getElementById('xp-bar-label');
+  const lvl = document.getElementById('xp-level-badge');
+  if (bar) bar.style.width = prog.pct + '%';
+  if (label) label.textContent = prog.next
+    ? prog.xpInLevel + ' / ' + prog.xpNeeded + ' XP'
+    : 'MAX';
+  if (lvl) lvl.textContent = prog.current.icon + ' ' + prog.current.title;
+}
+
+function checkDailyLogin() {
+  const data = getXPData();
+  const today = new Date().toDateString();
+  if (data.lastLogin !== today) {
+    data.lastLogin = today;
+    saveXPData(data);
+    setTimeout(() => awardXP('daily_login'), 16000); // after welcome screen
+  }
+}
+
+function renderXPPage() {
+  const el = document.getElementById('xp-content');
+  if (!el) return;
+  const data = getXPData();
+  const prog = getXPProgress(data.total);
+  el.innerHTML = '<div class="card" style="background:var(--bg2);text-align:center;padding:28px">'
+    + '<div style="font-size:40px;margin-bottom:8px">' + prog.current.icon + '</div>'
+    + '<div style="font-family:var(--serif);font-size:22px;font-style:italic;color:var(--txt0);margin-bottom:4px">Nível ' + prog.current.level + ' — ' + prog.current.title + '</div>'
+    + '<div style="font-size:11px;color:var(--txt2);margin-bottom:18px">' + data.total + ' XP total</div>'
+    + (prog.next ? '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:6px"><span>Próximo: ' + prog.next.icon + ' ' + prog.next.title + '</span><span>' + prog.xpInLevel + ' / ' + prog.xpNeeded + ' XP</span></div><div class="mbar" style="height:6px"><div class="mfill" style="width:' + prog.pct + '%;transition:width 1s ease"></div></div></div>' : '<div style="font-size:12px;color:var(--acc)">🏆 Nível máximo atingido!</div>')
+    + '</div>'
+    + '<div class="card"><div class="card-h"><span class="card-lbl">Como ganhar XP</span></div>'
+    + Object.entries(XP_ACTIONS).map(([k,v]) => '<div class="trow"><span class="tlbl">' + v.label + '</span><span style="font-size:11px;color:var(--acc2);font-weight:600">+' + v.xp + ' XP</span></div>').join('')
+    + '</div>'
+    + '<div class="card"><div class="card-h"><span class="card-lbl">Histórico de XP</span></div>'
+    + (data.log.length ? data.log.slice(0,20).map(l => '<div class="trow"><span class="tlbl">' + l.label + '</span><span style="font-size:10px;color:var(--green)">+' + l.xp + ' XP</span><span class="tdate">' + l.date + '</span></div>').join('') : '<div class="empty"><i class="ti ti-star"></i>Nenhuma ação ainda. Complete tarefas para ganhar XP!</div>')
+    + '</div>'
+    + '<div class="card"><div class="card-h"><span class="card-lbl">Todos os níveis</span></div>'
+    + XP_LEVELS.map(lvl => {
+        const unlocked = data.total >= lvl.xp;
+        const isCurrent = prog.current.level === lvl.level;
+        return '<div class="trow" style="opacity:' + (unlocked?'1':'.4') + '">'
+          + '<span style="font-size:18px;width:28px;flex-shrink:0">' + lvl.icon + '</span>'
+          + '<div style="flex:1"><div style="font-size:12px;color:var(--txt' + (unlocked?'0':'2') + ');font-weight:' + (isCurrent?'600':'400') + '">Nível ' + lvl.level + ' — ' + lvl.title + '</div>'
+          + '<div style="font-size:9px;color:var(--txt2)">' + lvl.xp + ' XP necessários</div></div>'
+          + (isCurrent ? '<span style="font-size:9px;padding:2px 8px;border-radius:20px;background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc2)">Atual</span>' : '')
+          + (unlocked && !isCurrent ? '<span style="font-size:12px;color:var(--green)">✓</span>' : '')
+          + '</div>';
+      }).join('')
+    + '</div>';
 }
 
 // INIT
