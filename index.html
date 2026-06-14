@@ -828,7 +828,7 @@ const thg=document.getElementById('th-grid');
 THEMES.forEach(t=>{const o=document.createElement('div');o.className='th-opt';o.innerHTML='<div class="th-sw'+(t.id===curTheme?' on':'')+'" data-id="'+t.id+'"><div class="th-a" style="background:'+t.a+'"></div><div class="th-b" style="background:'+t.b+'"></div></div><div class="th-nm">'+t.n+'</div>';o.querySelector('.th-sw').onclick=()=>applyTheme(t.id);thg.appendChild(o)});
 applyTheme(curTheme);
 
-function go(p){
+function _goBase(p){
   document.querySelectorAll('.pg').forEach(e=>e.classList.remove('act'));
   document.querySelectorAll('.ni[data-p]').forEach(e=>e.classList.toggle('act',e.dataset.p===p));
   const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('act');
@@ -1272,7 +1272,11 @@ function showLockScreen(p) {
   // Full-screen black overlay — no page content shown at all
   const overlay = document.createElement('div');
   overlay.id = 'lock-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;animation:fadeIn .25s ease';
+  // Position overlay to only cover main content (not sidebar)
+  const sb = document.getElementById('sb');
+  const sbW = sb ? (sb.classList.contains('open') ? 196 : 54) : 54;
+  const isMobile = window.innerWidth <= 768;
+  overlay.style.cssText = 'position:fixed;top:0;bottom:' + (isMobile ? '56px' : '0') + ';left:' + (isMobile ? '0' : sbW + 'px') + ';right:0;background:#000;z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;animation:fadeIn .25s ease';
   const lockIcon = document.createElement('div');
   lockIcon.style.cssText = 'width:64px;height:64px;border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center';
   lockIcon.innerHTML = '<i class="ti ti-lock" style="font-size:28px;color:#555"></i>';
