@@ -359,7 +359,6 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 .ni .lock-dot{width:7px;height:7px;border-radius:50%;background:var(--red);position:absolute;top:5px;right:5px;display:none}
 .ni.locked .lock-dot{display:block}
 </style>
-<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -449,7 +448,6 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
 </script>
 </head>
 <body>
-<!-- WELCOME ANIMATION -->
 <div id="welcome-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:998;flex-direction:column;align-items:center;justify-content:center;gap:0">
   <div style="display:flex;flex-direction:column;align-items:center;gap:28px;animation:welcomeFadeIn .8s cubic-bezier(.4,0,.2,1) forwards">
     <div id="wl-logo" style="width:72px;height:72px;border-radius:20px;background:var(--acc);display:flex;align-items:center;justify-content:center;box-shadow:0 0 60px color-mix(in srgb,var(--acc) 30%,transparent);transform:scale(.8);opacity:0;animation:logoIn .6s .2s cubic-bezier(.34,1.56,.64,1) forwards">
@@ -467,7 +465,6 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   </div>
 </div>
 
-<!-- AUTH -->
 <div id="auth-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;font-family:var(--sans)">
   <div style="width:360px;max-width:calc(100vw - 32px)">
     <div style="text-align:center;margin-bottom:28px">
@@ -493,9 +490,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   </div>
 </div>
 
-<!-- APP -->
 <div id="app-screen" style="display:none;flex:1;overflow:hidden;flex-direction:column">
-<!-- MOBILE NAV -->
 <div class="mobile-nav" id="mobile-nav">
   <div class="mn-item act" data-p="dash" onclick="go('dash');mobileAct(this)"><i class="ti ti-layout-dashboard"></i><span>Painel</span></div>
   <div class="mn-item" data-p="tasks" onclick="go('tasks');mobileAct(this)"><i class="ti ti-checks"></i><span>Tarefas</span></div>
@@ -517,7 +512,6 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   <div class="mn-more-item" onclick="go('settings');closeMore()"><i class="ti ti-adjustments-horizontal"></i>Config</div>
 </div>
 <div style="display:flex;flex:1;overflow:hidden">
-<!-- SIDEBAR -->
 <nav class="sb" id="sb">
   <div class="sb-logo" onclick="toggleSb()"><i class="ti ti-video"></i></div>
   <div class="sb-lbl">Principal</div>
@@ -555,7 +549,6 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
     <div class="av-sb" onclick="go('settings')"><i class="ti ti-user-circle" id="sb-ic"></i><img id="sb-img" alt=""><span class="avname" id="sb-name">Minha conta</span></div>
   </div>
 </nav>
-<!-- MAIN -->
 <div class="main">
   <header class="topbar">
     <div class="tb-tog" onclick="toggleSb()"><i class="ti ti-layout-sidebar"></i></div>
@@ -564,8 +557,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       <div class="sync"><div class="sdot"></div><span>Sincronizado</span></div>
       <div class="ib"><i class="ti ti-bell-ringing"></i></div>
     </div>
-  </header>  <!-- PAINEL -->
-  <section class="pg act" id="pg-dash">
+  </header>    <section class="pg act" id="pg-dash">
     <div class="scr">
       <div class="g2">
         <div class="card"><div class="card-h"><span class="card-lbl">Tarefas pendentes</span><span class="card-lnk" onclick="go('tasks')">ver todas →</span></div><div id="d-tasks"></div></div>
@@ -585,8 +577,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       <div class="card"><div class="card-h"><span class="card-lbl">YouTube Studio</span><span class="card-lnk" onclick="go('yt')">análise →</span></div><div id="dash-yt"></div></div>
     </div>
   </section>
-  <!-- TAREFAS -->
-  <section class="pg" id="pg-tasks">
+    <section class="pg" id="pg-tasks">
     <div class="scr"><div class="card">
       <div class="frow">
         <input class="fin" id="t-inp" placeholder="Nova tarefa..." style="flex:1;min-width:120px" onkeydown="if(event.key==='Enter')addTask()">
@@ -597,8 +588,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       <div id="task-list"></div>
     </div></div>
   </section>
-  <!-- GRAVAÇÕES -->
-  <section class="pg" id="pg-recs">
+    <section class="pg" id="pg-recs">
     <div class="scr"><div class="card">
       <div class="frow">
         <input class="fin" id="r-inp" placeholder="Nome da gravação..." style="flex:1;min-width:120px" onkeydown="if(event.key==='Enter')addRec()">
@@ -609,8 +599,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       <div id="rec-list"></div>
     </div></div>
   </section>
-  <!-- CALENDÁRIO -->
-  <section class="pg" id="pg-cal">
+    <section class="pg" id="pg-cal">
     <div class="cal-wrap">
       <div class="cal-sb">
         <div>
@@ -642,8 +631,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       </div>
     </div>
   </section>
-  <!-- IA -->
-  <section class="pg" id="pg-ai">
+    <section class="pg" id="pg-ai">
     <div class="chat-wrap">
       <div class="chat-top">
         <div class="chat-icon"><i class="ti ti-sparkles"></i></div>
@@ -666,10 +654,8 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       </div>
     </div>
   </section>
-  <!-- YOUTUBE -->
-  <section class="pg" id="pg-yt"><div class="scr" id="yt-scr"></div></section>
-  <!-- CONFIGURAÇÕES -->
-  <section class="pg" id="pg-settings">
+    <section class="pg" id="pg-yt"><div class="scr" id="yt-scr"></div></section>
+    <section class="pg" id="pg-settings">
     <div class="set-scr">
       <div class="prof-card">
         <div class="av-wrap">
@@ -708,10 +694,8 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       </div>
     </div>
   </section>
-  <!-- MONETIZAÇÃO -->
-  <section class="pg" id="pg-monetization"><div class="scr" id="mono-scr"><div class="empty"><i class="ti ti-coin"></i>Conecte seu canal no YouTube Studio para ver dados de monetização.</div></div></section>
-  <!-- SHORTS -->
-  <section class="pg" id="pg-shorts">
+    <section class="pg" id="pg-monetization"><div class="scr" id="mono-scr"><div class="empty"><i class="ti ti-coin"></i>Conecte seu canal no YouTube Studio para ver dados de monetização.</div></div></section>
+    <section class="pg" id="pg-shorts">
     <div class="scr">
       <div class="card">
         <div class="card-h"><span class="card-lbl">Planejador de Shorts</span></div>
@@ -726,8 +710,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       <div class="card" style="background:var(--bg2)"><div class="card-h"><span class="card-lbl">Dica de Short</span></div><div style="font-size:12px;color:var(--txt1);line-height:1.7">Shorts com melhor desempenho têm entre <strong style="color:var(--acc2)">40-55 segundos</strong>, começam com movimento ou fala nos primeiros 2s, e têm texto na tela. Evite links na descrição.</div></div>
     </div>
   </section>
-  <!-- HISTÓRICO -->
-  <section class="pg" id="pg-history">
+    <section class="pg" id="pg-history">
     <div class="scr">
       <div class="card">
         <div class="card-h"><span class="card-lbl">Registrar crescimento</span></div>
@@ -741,8 +724,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       <div class="card"><div class="card-h"><span class="card-lbl">Evolução</span></div><canvas id="history-chart" style="width:100%;max-height:220px"></canvas><div id="history-list" style="margin-top:12px"></div></div>
     </div>
   </section>
-  <!-- CHECKLIST -->
-  <section class="pg" id="pg-checklist">
+    <section class="pg" id="pg-checklist">
     <div class="scr">
       <div class="card"><div class="card-h"><span class="card-lbl">Checklist antes de publicar</span><span class="card-lnk" onclick="resetChecklist()">Resetar</span></div><div id="checklist-items"></div></div>
       <div class="card" style="background:var(--bg2)">
@@ -755,17 +737,14 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       </div>
     </div>
   </section>
-  <!-- XP -->
-  <section class="pg" id="pg-xp">
+    <section class="pg" id="pg-xp">
     <div class="scr" style="max-width:680px;margin:0 auto;width:100%">
       <div id="xp-content"></div>
     </div>
   </section>
 
-  <!-- SQUAD -->
-  <section class="pg" id="pg-squad"><div class="scr" id="squad-scr" style="max-width:680px;margin:0 auto;width:100%"><div class="empty"><i class="ti ti-users-group"></i>Carregando squad...</div></div></section>
-  <!-- CHAT -->
-  <section class="pg" id="pg-chat">
+    <section class="pg" id="pg-squad"><div class="scr" id="squad-scr" style="max-width:680px;margin:0 auto;width:100%"><div class="empty"><i class="ti ti-users-group"></i>Carregando squad...</div></div></section>
+    <section class="pg" id="pg-chat">
     <div style="display:flex;flex:1;overflow:hidden">
       <div style="width:200px;border-right:1px solid var(--bg3);display:flex;flex-direction:column;flex-shrink:0;background:var(--bg1)">
         <div style="padding:10px 14px;border-bottom:1px solid var(--bg3);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
@@ -782,8 +761,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       </div>
     </div>
   </section>
-  <!-- COMUNIDADE -->
-  <section class="pg" id="pg-people">
+    <section class="pg" id="pg-people">
     <div class="scr" style="max-width:680px;margin:0 auto;width:100%">
       <div class="card" style="background:var(--bg2)">
         <div class="card-h"><span class="card-lbl">Criadores no Creator Hub</span></div>
@@ -798,8 +776,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       </div>
     </div>
   </section>
-  <!-- FEEDBACK -->
-  <section class="pg" id="pg-feedback">
+    <section class="pg" id="pg-feedback">
     <div class="scr" style="max-width:680px;margin:0 auto;width:100%">
       <div class="card" style="background:var(--bg2)">
         <div class="card-h"><span class="card-lbl">Deixe seu feedback</span></div>
@@ -819,12 +796,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       <div class="card"><div class="card-h"><span class="card-lbl">Feedbacks da comunidade</span><span class="card-lnk" onclick="loadFbs()">atualizar</span></div><div id="fb-list"><div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda.</div></div></div>
     </div>
   </section>
-</div><!-- /main -->
-</div><!-- /inner flex -->
-</div><!-- /app-screen -->
-
-<!-- MODALS -->
-<div class="ov" id="ev-ov">
+</div></div></div><div class="ov" id="ev-ov">
   <div class="mbox" onclick="event.stopPropagation()">
     <div class="mbox-t">Novo evento</div>
     <div class="mf"><label>Título</label><input id="ev-t" placeholder="Nome..."></div>
@@ -910,7 +882,6 @@ const TCATS={s:{l:'Roteiro',c:'tt-s'},f:{l:'Gravação',c:'tt-f'},e:{l:'Edição
 const RSTATS={raw:{l:'Bruto',c:'s-raw',p:10},rec:{l:'Gravando',c:'s-rec',p:40},edt:{l:'Editando',c:'s-edt',p:70},pub:{l:'Publicado',c:'s-pub',p:100}};
 const SHORT_ST={idea:{l:'Ideia',c:'s-raw'},script:{l:'Roteiro',c:'s-edt'},rec:{l:'Gravando',c:'s-rec'},edit:{l:'Editando',c:'s-edt'},pub:{l:'Publicado',c:'s-pub'}};
 const CHECKLIST_DEFAULT=[{id:1,text:'Thumbnail criada e testada em miniatura',done:false},{id:2,text:'Título otimizado (máx 60 chars)',done:false},{id:3,text:'Descrição com palavras-chave nos primeiros 150 chars',done:false},{id:4,text:'Tags adicionadas (10-15 relevantes)',done:false},{id:5,text:'Capítulos adicionados na descrição',done:false},{id:6,text:'Tela final configurada (últimos 20s)',done:false},{id:7,text:'Cards adicionados no vídeo',done:false},{id:8,text:'Categoria e idioma definidos',done:false},{id:9,text:'Playlist adicionada',done:false},{id:10,text:'Horário de publicação agendado',done:false},{id:11,text:'Resposta para primeiros comentários preparada',done:false},{id:12,text:'Post nas redes sociais preparado',done:false}];
-const AI_KB={crescer:['Para crescer do zero, foque em **consistência antes de perfeição**. Poste 1 vídeo por semana no mesmo dia. O algoritmo recompensa regularidade.\n\nEscolha um **nicho específico** nos primeiros 50 vídeos. Canais generalistas demoram muito mais.\n\nUse os **primeiros 30 segundos** para prender — apresente o problema antes de qualquer introdução.','O crescimento depende de três pilares: **clique, assistência e retorno**. Boa thumbnail garante o clique, bom roteiro garante que assistam até o fim, qualidade faz as pessoas voltarem.\n\nAnalise seus 3 vídeos com melhor desempenho e *faça mais do mesmo*. O YouTube já te diz o que funciona.'],pauta:['Ideias que funcionam: **1) "Eu tentei X por 30 dias"** — alto CTR. **2) "O erro que quase acabou com meu canal"** — vulnerabilidade gera conexão. **3) Reagir a vídeo viral do seu nicho. **4) "Guia completo para iniciantes"** — evergreen. **5) Bastidores do processo**.','Para pautas infinitas: anote **3 perguntas que você tinha** quando começou. Vá nos comentários dos vídeos populares do seu nicho — as perguntas lá são pautas prontas.'],retencao:['A retenção começa no título e thumbnail. Use a técnica do **loop aberto**: prometa algo no início que você revela no final. Isso cria tensão que mantém o espectador.\n\nCorte impiedosamente tudo que não serve à mensagem principal. *Cada segundo irrelevante é uma saída potencial.*','Três técnicas: **1) Edição em ritmo** — troque ângulo a cada 20-30s. **2) Micro-ganchos** — a cada 2-3 min diga "daqui a pouco...". **3) Capítulos** — timestamps no vídeo.'],roteiro:['Estrutura **AIDA**: *Atenção* (5s — problema forte), *Interesse* (por que importa), *Desejo* (resultado), *Ação* (o que fazer).\n\nEscreva o roteiro **falando em voz alta** — elimina frases artificiais automaticamente.','Comece com a **conclusão**. Escreva o que o espectador vai saber no final, depois construa o caminho reverso. Elimina conteúdo irrelevante automaticamente.'],thumbnails:['Boa thumbnail precisa funcionar em **tamanho miniatura**. Teste olhando com 5cm de largura.\n\nElementos que convertem: **rosto com emoção exagerada**, **texto com máx 4 palavras** em fonte grossa, **contraste alto**.','Erros que derrubam CTR: **1) Texto pequeno demais. **2) Muitos elementos. **3) Cor parecida com vídeo ao lado. **4) Sem rosto humano. **5) Título e thumbnail dizendo a mesma coisa**.'],analisar:['Seu **CTR acima de 8%** está excelente — a média é 2-5%. Thumbnails e títulos estão funcionando.\n\nO ponto crítico é o **tempo médio**. Analise exatamente em qual minuto há maior queda e trabalhe esse trecho.'],default:['Para canais em crescimento, o mais importante é que o YouTube é um **jogo de longo prazo**. Os primeiros 100 vídeos são de aprendizado.\n\nFoque em melhorar **uma coisa por vez** e estude seus próprios dados.','**Qualidade percebida** pelo espectador é diferente de qualidade técnica. Um celular com informação genuinamente útil vence uma câmera cara com conteúdo fraco.']};
 
 function pad(n){return String(n).padStart(2,'0')}
 function dk(y,m,d){return y+'-'+pad(m+1)+'-'+pad(d)}
@@ -1064,14 +1035,75 @@ function openEvDetail(id){const ev=events.find(e=>e.id===id);if(!ev)return;curDe
 function saveEvDetail(){const ev=events.find(e=>e.id===curDetailId);if(!ev)return;ev.date=document.getElementById('evd-date').value;ev.time=document.getElementById('evd-time').value;ev.place=document.getElementById('evd-place').value;ev.duration=document.getElementById('evd-dur').value;ev.invest=document.getElementById('evd-invest').value;ev.material=document.getElementById('evd-mat').value;ev.notes=document.getElementById('evd-notes').value;saveEvs();renderCal();document.getElementById('ev-detail-ov').classList.remove('open');toast('Evento atualizado')}
 function delEvDetail(){if(!confirm('Excluir evento?'))return;events=events.filter(e=>e.id!==curDetailId);saveEvs();renderCal();document.getElementById('ev-detail-ov').classList.remove('open');toast('Evento excluído')}
 
-// AI CHAT
-const aiHist=[];
+// AI CHAT - INTEGRADO COM GEMINI API
+const GEMINI_API_KEY = "AQ.Ab8RN6LnKCzP9H-MvE0mEJh6WIf2pe2CADkD-X6AAFjcsMoXxw"; // <-- COLOQUE SUA CHAVE AQUI
+
+let geminiHistory = [
+  { role: "user", parts: [{ text: "Aja como o Studio AI, um assistente especialista em YouTube do aplicativo Creator Hub. Ajude o criador com pautas, roteiros, retenção e thumbnails. Seja prático, direto e use um tom amigável e focado em crescimento." }] },
+  { role: "model", parts: [{ text: "Olá! Sou o Studio AI. Pergunte sobre pautas, roteiro, thumbnails, crescimento de canal — qualquer coisa do seu YouTube." }] }
+];
 document.getElementById('init-t').textContent=tnow();
-function appendMsg(text,role){const box=document.getElementById('msgs');const row=document.createElement('div');row.className='mrow'+(role==='user'?' usr':'');const icon=role==='user'?'<div class="mav us"><i class="ti ti-user"></i></div>':'<div class="mav ai"><i class="ti ti-sparkles"></i></div>';const txt=role==='ai'?text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>'):text;row.innerHTML=icon+'<div><div class="bbl '+(role==='user'?'us':'ai')+'">'+txt+'</div><div class="mtime">'+tnow()+'</div></div>';box.appendChild(row);box.scrollTop=box.scrollHeight}
-function appendLoading(){const box=document.getElementById('msgs');const row=document.createElement('div');row.className='mrow';row.id='ld-row';row.innerHTML='<div class="mav ai"><i class="ti ti-sparkles"></i></div><div><div class="bbl ai"><div class="tdots"><span></span><span></span><span></span></div></div></div>';box.appendChild(row);box.scrollTop=box.scrollHeight;return row}
-function getAIReply(msg){const m=msg.toLowerCase();let key='default';if(m.includes('crescer')||m.includes('canal')||m.includes('começ')||m.includes('dica'))key='crescer';if(m.includes('pauta')||m.includes('ideia')||m.includes('assunto'))key='pauta';if(m.includes('reten')||m.includes('assistid')||m.includes('abandona'))key='retencao';if(m.includes('roteiro')||m.includes('script'))key='roteiro';if(m.includes('thumbnail')||m.includes('capa')||m.includes('ctr'))key='thumbnails';if(m.includes('anali')||m.includes('dados')||m.includes('métric'))key='analisar';const arr=AI_KB[key]||AI_KB.default;return arr[Math.floor(Math.random()*arr.length)]}
-function ask(msg){if(!msg)return;appendMsg(msg,'user');aiHist.push({role:'user',content:msg});const lr=appendLoading();setTimeout(()=>{const reply=getAIReply(msg);aiHist.push({role:'assistant',content:reply});lr.remove();appendMsg(reply,'ai')},600+Math.random()*700)}
-function submitAI(){const inp=document.getElementById('chat-inp');const v=inp.value.trim();if(!v)return;inp.value='';inp.style.height='auto';ask(v)}
+
+function appendMsg(text,role){
+  const box=document.getElementById('msgs');
+  const row=document.createElement('div');
+  row.className='mrow'+(role==='user'?' usr':'');
+  const icon=role==='user'?'<div class="mav us"><i class="ti ti-user"></i></div>':'<div class="mav ai"><i class="ti ti-sparkles"></i></div>';
+  const txt=role==='ai'?text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>'):text;
+  row.innerHTML=icon+'<div><div class="bbl '+(role==='user'?'us':'ai')+'">'+txt+'</div><div class="mtime">'+tnow()+'</div></div>';
+  box.appendChild(row);
+  box.scrollTop=box.scrollHeight;
+}
+
+function appendLoading(){
+  const box=document.getElementById('msgs');
+  const row=document.createElement('div');
+  row.className='mrow';
+  row.id='ld-row';
+  row.innerHTML='<div class="mav ai"><i class="ti ti-sparkles"></i></div><div><div class="bbl ai"><div class="tdots"><span></span><span></span><span></span></div></div></div>';
+  box.appendChild(row);
+  box.scrollTop=box.scrollHeight;
+  return row;
+}
+
+async function ask(msg){
+  if(!msg)return;
+  appendMsg(msg,'user');
+  geminiHistory.push({ role: "user", parts: [{ text: msg }] });
+  
+  const lr=appendLoading();
+  
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: "POST", 
+      headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ contents: geminiHistory })
+    });
+    
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    
+    const reply = data.candidates[0].content.parts[0].text;
+    geminiHistory.push({ role: "model", parts: [{ text: reply }] });
+    
+    lr.remove();
+    appendMsg(reply,'ai');
+  } catch (error) {
+    console.error(error);
+    lr.remove();
+    appendMsg("Ops, erro de conexão com a IA. Verifique se você colocou a API Key corretamente no código.", 'ai');
+    geminiHistory.pop();
+  }
+}
+
+function submitAI(){
+  const inp=document.getElementById('chat-inp');
+  const v=inp.value.trim();
+  if(!v)return;
+  inp.value='';
+  inp.style.height='auto';
+  ask(v);
+}
 
 // YOUTUBE
 let ytToken=localStorage.getItem('yt_token')||null;
