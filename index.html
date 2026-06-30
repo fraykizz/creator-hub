@@ -393,20 +393,26 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   window.fbLim = FM.limit;
   window.fbSnap = FM.onSnapshot;
 
-  // INTEGRAÇÃO: Lógica para pedir permissão e salvar o celular
-  window.ativarNotificacoes = async () => {
+ window.ativarNotificacoes = async () => {
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             toast('Permissão concedida! Registrando celular...');
             
-            // COLE SUA CHAVE VAPID AQUI (Gerada no Firebase Console)
+            // 1. ENSINA O FIREBASE ONDE ESTÁ O ARQUIVO NO GITHUB PAGES
+            const swRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+            
+            // COLE SUA CHAVE VAPID AQUI:
             const vapidKey = "BP334HJBRPjmG8NRFEGf_y2ASmZtqEKVbZHtniyJFJOO_dKeDpqg2C8sK07YrBtha1Q6P6_Ofv-bqd_09iKWwik"; 
             
-            const currentToken = await getToken(messaging, { vapidKey: vapidKey });
+            // 2. PASSA A REGISTRO CORRETO PARA GERAR O TOKEN
+            const currentToken = await getToken(messaging, { 
+                vapidKey: vapidKey,
+                serviceWorkerRegistration: swRegistration // Mágica acontece aqui!
+            });
+            
             if (currentToken) {
                 console.log('Token gerado: ', currentToken);
-                // Salva o token no perfil do usuário
                 if (window._fbUser) {
                     await window.fbSet(window.fbDoc('profiles', window._fbUser.uid), { 
                         fcmToken: currentToken 
@@ -421,7 +427,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
         }
     } catch (error) {
         console.error('Erro nas notificações:', error);
-        toast('Erro ao ativar notificações. Cole a chave VAPID.');
+        toast('Erro ao ativar notificações. Olhe o console.');
     }
   };
 
