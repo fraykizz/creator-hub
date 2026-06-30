@@ -1233,4 +1233,532 @@ function addHistory(){const subs=parseInt(document.getElementById('h-subs').valu
 function renderChecklist(){const el=document.getElementById('checklist-items');if(!el)return;const done=checklistItems.filter(i=>i.done).length;el.innerHTML='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:5px"><span>'+done+' de '+checklistItems.length+' concluídos</span><span>'+Math.round((done/checklistItems.length)*100)+'%</span></div><div class="mbar"><div class="mfill" style="width:'+Math.round((done/checklistItems.length)*100)+'%;background:'+(done===checklistItems.length?'var(--green)':'var(--acc)')+'"></div></div></div>';checklistItems.forEach((item,i)=>{const d=document.createElement('div');d.className='trow';d.innerHTML='<div class="tck'+(item.done?' on':'')+'"></div><span class="tlbl'+(item.done?' done':'')+'">'+item.text+'</span>';d.querySelector('.tck').onclick=()=>{checklistItems[i].done=!checklistItems[i].done;saveChecklist();renderChecklist()};el.appendChild(d)})}
 function resetChecklist(){if(!confirm('Resetar checklist?'))return;checklistItems=CHECKLIST_DEFAULT.map(i=>({...i,done:false}));saveChecklist();renderChecklist()}
 function copyTitle(el){const t=el.getAttribute('data-title');navigator.clipboard.writeText(t).then(()=>toast('Título copiado!'))}
-function genTitles(){const inp=document.getElementById('title-inp');const desc=inp.value.trim();if(!desc){toast('Descreva seu vídeo primeiro');return}const out=document.getElementById('titles-out');out.innerHTML='<div class="tdots" style="padding:10px 0"><span></span><span></span><span></span></div>';setTimeout(()=>{const w=desc.toLowerCase();const isHowTo=w.includes('como')||w.includes('tutorial')||w.includes('fazer');const isReview=w.includes('review')||w.includes('testei')||w.includes('vale');const d=desc.charAt(0).toUpperCase()+desc.slice(1);let titles=isHowTo?[d+' passo a passo (do jeito certo)','O guia COMPLETO de '+desc.toLowerCase()+' que ninguém fez ainda',desc.toLowerCase()+': Aprenda em '+(Math.floor(Math.random()*15)+5)+' minutos','Fiz '+desc.toLowerCase()+' por 30 dias — o que ninguém te conta','Por que todo mundo erra em '+desc.toLowerCase()+' (e como acertar)']:isReview?[d+': VALE A PENA? Testei por 2 semanas','Honestamente: '+d+' (minha
+function genTitles(){const inp=document.getElementById('title-inp');const desc=inp.value.trim();if(!desc){toast('Descreva seu vídeo primeiro');return}const out=document.getElementById('titles-out');out.innerHTML='<div class="tdots" style="padding:10px 0"><span></span><span></span><span></span></div>';setTimeout(()=>{const w=desc.toLowerCase();const isHowTo=w.includes('como')||w.includes('tutorial')||w.includes('fazer');const isReview=w.includes('review')||w.includes('testei')||w.includes('vale');const d=desc.charAt(0).toUpperCase()+desc.slice(1);let titles=isHowTo?[d+' passo a passo (do jeito certo)','O guia COMPLETO de '+desc.toLowerCase()+' que ninguém fez ainda',desc.toLowerCase()+': Aprenda em '+(Math.floor(Math.random()*15)+5)+' minutos','Fiz '+desc.toLowerCase()+' por 30 dias — o que ninguém te conta','Por que todo mundo erra em '+desc.toLowerCase()+' (e como acertar)']:isReview?[d+': VALE A PENA? Testei por 2 semanas','Honestamente: '+d+' (minha experiência real)',d+' — o que as reviews não mostram','Comprei '+d+' — foi um erro?',d+': Depois de '+(Math.floor(Math.random()*6)+2)+' meses de uso']:[d+' — o que ninguém está falando','Tudo que você precisa saber sobre '+desc.toLowerCase(),d+': minha experiência honesta','Por que '+desc.toLowerCase()+' mudou minha rotina completamente',d+' em '+(Math.floor(Math.random()*8)+3)+' minutos (sem enrolação)'];out.innerHTML='<div style="font-size:9px;color:var(--txt2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;padding:0 2px">Clique para copiar</div>'+titles.map((t,i)=>{const safe=t.replace(/"/g,'&quot;');const chars=t.length;const cc=chars<=60?'var(--green)':chars<=70?'var(--amber)':'var(--red)';return'<div class="trow" style="cursor:pointer;padding:9px 6px" onclick="copyTitle(this)" data-title="'+safe+'"><span style="font-size:10px;color:var(--acc2);font-weight:600;flex-shrink:0;width:16px">'+(i+1)+'</span><span class="tlbl" style="line-height:1.5">'+t+'</span><span style="font-size:9px;color:'+cc+';flex-shrink:0">'+chars+'</span><i class="ti ti-copy" style="font-size:12px;color:var(--txt2);flex-shrink:0"></i></div>'}).join('')},800)}
+
+// SQUAD
+let squadData=null,squadTasks=[];
+async function loadSquadFromFb(id){if(!window.fbGet||!window.fbDoc)return null;try{const s=await window.fbGet(window.fbDoc('squads',id));return s.exists()?s.data():null}catch(e){return null}}
+async function saveSquadToFb(squad){if(!window.fbSet||!window.fbDoc)return;try{await window.fbSet(window.fbDoc('squads',squad.id),squad)}catch(e){console.error(e)}}
+async function renderSquad(){const el=document.getElementById('squad-scr');if(!el)return;el.style.cssText='max-width:680px;margin:0 auto;width:100%';if(!window._fbUser){el.innerHTML='<div class="empty"><i class="ti ti-users-group"></i>Faça login para usar o Squad.</div>';return}const urlP=new URLSearchParams(window.location.search);const inv=urlP.get('squad');if(inv&&!squadData){el.innerHTML='<div class="card" style="text-align:center;padding:28px"><div style="font-family:var(--serif);font-size:19px;font-style:italic;color:var(--txt0);margin-bottom:10px">Convite de Squad</div><div style="font-size:12px;color:var(--txt2);margin-bottom:18px">Você foi convidado para entrar em uma squad.</div><button class="btn-a" onclick="acceptInvite(window._pendingInv)">Aceitar convite</button></div>';window._pendingInv=inv;return}const sid=localStorage.getItem('ch_squad_id');if(sid&&!squadData){el.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando squad...</div>';squadData=await loadSquadFromFb(sid);if(squadData)squadTasks=squadData.tasks||[]}if(!sid||!squadData){el.innerHTML='<div class="card" style="text-align:center;padding:28px"><i class="ti ti-users-group" style="font-size:36px;color:var(--acc);display:block;margin-bottom:12px"></i><div style="font-family:var(--serif);font-size:19px;font-style:italic;color:var(--txt0);margin-bottom:6px">Crie sua Squad</div><div style="font-size:12px;color:var(--txt2);line-height:1.6;margin-bottom:20px;max-width:280px;margin-left:auto;margin-right:auto">Convide colaboradores e compartilhem um calendário com sua equipe.</div><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn-a" onclick="createSquad()"><i class="ti ti-plus"></i>Criar Squad</button><button class="btn-g" onclick="joinSquad()"><i class="ti ti-door-enter"></i>Entrar com código</button></div></div>';return}const members=squadData.members||[];el.innerHTML='<div class="card" style="background:var(--bg2);margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div><div style="font-family:var(--serif);font-size:17px;font-style:italic;color:var(--txt0)">'+squadData.name+'</div><div style="font-size:10px;color:var(--txt2);margin-top:2px">'+members.length+' membro'+(members.length!==1?'s':'')+'</div></div><div style="display:flex;gap:6px"><button class="btn-g" onclick="copySquadInv()" style="font-size:10px;padding:5px 10px"><i class="ti ti-link" style="font-size:12px"></i>Convidar</button><button class="btn-g" onclick="leaveSquad()" style="font-size:10px;padding:5px 10px;border-color:var(--red);color:var(--red)">Sair</button></div></div><div style="display:flex;flex-direction:column;gap:4px">'+members.map(m=>'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bg3)"><div style="width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--acc) 18%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-user" style="font-size:13px;color:var(--acc2)"></i></div><div style="flex:1"><div style="font-size:12px;color:var(--txt1)">'+m.name+'</div><div style="font-size:9px;color:var(--txt2)">'+m.email+'</div></div>'+(m.uid===window._fbUser.uid?'<span style="font-size:8px;padding:2px 7px;border-radius:20px;background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc2)">Você</span>':'')+'</div>').join('')+'</div></div><div class="card"><div class="card-h"><span class="card-lbl">Tarefas da Squad</span><span class="card-lnk" onclick="addSquadTask()">+ Nova tarefa</span></div><div id="squad-tasks">'+renderSquadTaskList()+'</div></div>'}
+function renderSquadTaskList(){if(!squadTasks.length)return'<div class="empty" style="padding:16px"><i class="ti ti-clipboard"></i>Nenhuma tarefa ainda.</div>';return squadTasks.map((t,i)=>'<div class="trow"><div class="tck'+(t.done?' on':'')+'"></div><div style="flex:1"><div class="tlbl'+(t.done?' done':'')+'">'+t.name+'</div>'+(t.assignees?.length?'<div style="font-size:9px;color:var(--acc2);margin-top:2px">👥 '+t.assignees.join(', ')+'</div>':'')+'</div>'+(t.date?'<span class="tdate">'+t.date+'</span>':'')+'<button class="xb" style="opacity:1" onclick="delSquadTask('+i+')"><i class="ti ti-x"></i></button></div>').join('')}
+async function toggleSquadTask(i){squadTasks[i].done=!squadTasks[i].done;document.getElementById('squad-tasks').innerHTML=renderSquadTaskList();if(squadData){squadData.tasks=squadTasks;await saveSquadToFb(squadData)}}
+async function delSquadTask(i){squadTasks.splice(i,1);document.getElementById('squad-tasks').innerHTML=renderSquadTaskList();if(squadData){squadData.tasks=squadTasks;await saveSquadToFb(squadData)}}
+async function createSquad(){const name=prompt('Nome da sua Squad:');if(!name)return;const id='sq_'+Date.now();const user=window._fbUser;squadData={id,name,members:[{name:user.displayName||user.email.split('@')[0],email:user.email,uid:user.uid}],tasks:[],createdAt:Date.now(),createdBy:user.uid};squadTasks=[];localStorage.setItem('ch_squad_id',id);await saveSquadToFb(squadData);renderSquad();toast('Squad "'+name+'" criada!')}
+function joinSquad(){const code=prompt('Cole o ID da squad:');if(code)acceptInvite(code.trim())}
+async function acceptInvite(sid){const user=window._fbUser;if(!user){toast('Faça login primeiro');return}const data=await loadSquadFromFb(sid);if(!data){toast('Squad não encontrada. Verifique o ID.');return}if(!data.members.find(m=>m.uid===user.uid)){data.members.push({name:user.displayName||user.email.split('@')[0],email:user.email,uid:user.uid});await saveSquadToFb(data)}squadData=data;squadTasks=data.tasks||[];localStorage.setItem('ch_squad_id',sid);history.replaceState(null,'',window.location.pathname);renderSquad();toast('Entrou na squad "'+data.name+'"!')}
+function copySquadInv(){if(!squadData)return;const link=window.location.origin+window.location.pathname+'?squad='+squadData.id;navigator.clipboard.writeText(link).then(()=>toast('Link copiado! Mande para seu amigo.'))}
+function leaveSquad(){if(!confirm('Sair da squad?'))return;localStorage.removeItem('ch_squad_id');squadData=null;squadTasks=[];renderSquad();toast('Saiu da squad')}
+async function addSquadTask(){const name=prompt('Nome da tarefa:');if(!name)return;const members=(squadData?.members||[]).map(m=>m.name);const as=prompt('Quem participa?\n'+members.map((m,i)=>(i+1)+'. '+m).join('\n')+'\n\n(Separe nomes por vírgula)');const date=prompt('Data (AAAA-MM-DD) ou vazio:');const task={id:Date.now()+'',name,assignees:as?as.split(',').map(s=>s.trim()).filter(Boolean):[],date:date||'',done:false};squadTasks.unshift(task);if(squadData){squadData.tasks=squadTasks;await saveSquadToFb(squadData)}if(date){events.push({id:'squad_'+task.id,title:'👥 '+name,type:'task',date,time:'',note:(task.assignees.join(', ')||'Squad')});saveEvs()}document.getElementById('squad-tasks').innerHTML=renderSquadTaskList();toast('Tarefa criada!')}
+
+// CHAT
+let convUnsub=null;
+async function loadConvs() {
+  const el=document.getElementById('conv-list');
+  if(!el||!window._fbUser||!window.fbGet||!window.fbDoc) return;
+  el.innerHTML='<div class="empty" style="padding:12px;font-size:10px"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';
+  try {
+    const mySnap=await window.fbGet(window.fbDoc('profiles',window._fbUser.uid));
+    const following=(mySnap.exists()?mySnap.data():{}).following||[];
+    if(!following.length){el.innerHTML='<div class="empty" style="padding:14px;font-size:10px;line-height:1.6"><i class="ti ti-message"></i>Siga alguém na Comunidade para iniciar uma conversa.</div>';return;}
+    const profiles=await Promise.all(following.map(uid=>window.fbGet(window.fbDoc('profiles',uid))));
+    el.innerHTML='';
+    profiles.forEach(snap=>{
+      if(!snap.exists()) return;
+      const p=snap.data(); const uid=p.uid||snap.id;
+      const convId=[window._fbUser.uid,uid].sort().join('_');
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--bg3);transition:background .13s';
+      row.onmouseover=()=>row.style.background='var(--bg2)';
+      row.onmouseout=()=>row.style.background='';
+      row.onclick=()=>openConv(uid,convId,p.name||'Usuário');
+      const av=document.createElement('div');
+      av.style.cssText='width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden';
+      av.innerHTML=p.photo?'<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">':'<i class="ti ti-user" style="font-size:14px;color:var(--acc2)"></i>';
+      const info=document.createElement('div');
+      const nm=document.createElement('div'); nm.style.cssText='font-size:11px;color:var(--txt1);font-weight:500'; nm.textContent=p.name||'Usuário';
+      info.appendChild(nm);
+      if(p.channel){const ch=document.createElement('div');ch.style.cssText='font-size:9px;color:var(--acc)';ch.textContent=p.channel;info.appendChild(ch);}
+      row.appendChild(av); row.appendChild(info); el.appendChild(row);
+    });
+  } catch(e){el.innerHTML='<div class="empty" style="padding:12px;font-size:10px"><i class="ti ti-alert-triangle"></i>'+e.message+'</div>';}
+}
+function openConv(uid,convId,name) {
+  if(convUnsub) convUnsub();
+  const area=document.getElementById('chat-area'); if(!area) return;
+  area.innerHTML=''; area.style.cssText='flex:1;display:flex;flex-direction:column;overflow:hidden';
+  const hdr=document.createElement('div');
+  hdr.style.cssText='padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--bg3);display:flex;align-items:center;gap:10px;flex-shrink:0';
+  hdr.innerHTML='<div style="width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center"><i class="ti ti-user" style="font-size:13px;color:var(--acc2)"></i></div><span style="font-family:var(--serif);font-size:14px;font-style:italic;color:var(--txt0);flex:1">'+name+'</span>';
+  const msgs=document.createElement('div');
+  msgs.id='conv-msgs'; msgs.style.cssText='flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px';
+  msgs.innerHTML='<div class="empty" style="padding:16px"><i class="ti ti-message"></i>Diga olá!</div>';
+  const footer=document.createElement('div');
+  footer.style.cssText='padding:10px 12px;border-top:1px solid var(--bg3);display:flex;gap:8px;flex-shrink:0;background:var(--bg1)';
+  const inp=document.createElement('input');
+  inp.className='fin'; inp.id='conv-inp'; inp.placeholder='Mensagem...'; inp.style.flex='1';
+  const cid=convId;
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')sendConvMsg(cid);});
+  const btn=document.createElement('button'); btn.className='btn-a'; btn.style.padding='8px 14px';
+  btn.innerHTML='<i class="ti ti-send-2" style="font-size:13px"></i>';
+  btn.addEventListener('click',()=>sendConvMsg(cid));
+  footer.appendChild(inp); footer.appendChild(btn);
+  area.appendChild(hdr); area.appendChild(msgs); area.appendChild(footer);
+  try {
+    const q=window.fbQ(window.fbCol('chats/'+convId+'/messages'),window.fbOB('createdAt','asc'),window.fbLim(100));
+    convUnsub=window.fbSnap(q,snap=>{
+      const box=document.getElementById('conv-msgs'); if(!box) return;
+      const list=[]; snap.forEach(d=>list.push(d.data()));
+      if(!list.length){box.innerHTML='<div class="empty" style="padding:16px"><i class="ti ti-message"></i>Diga olá!</div>';return;}
+      box.innerHTML='';
+      list.forEach(m=>{
+        const isMe=m.uid===window._fbUser?.uid;
+        const wrap=document.createElement('div');
+        wrap.style.cssText='display:flex;justify-content:'+(isMe?'flex-end':'flex-start')+';align-items:flex-end;gap:6px';
+        if(!isMe){const av=document.createElement('div');av.style.cssText='width:24px;height:24px;border-radius:50%;background:color-mix(in srgb,var(--acc) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0';av.innerHTML='<i class="ti ti-user" style="font-size:10px;color:var(--acc2)"></i>';wrap.appendChild(av);}
+        const bubble=document.createElement('div');
+        bubble.style.cssText='max-width:70%;padding:9px 13px;border-radius:'+(isMe?'14px 14px 3px 14px':'14px 14px 14px 3px')+';background:'+(isMe?'color-mix(in srgb,var(--acc) 18%,transparent)':'var(--bg3)')+';border:1px solid '+(isMe?'color-mix(in srgb,var(--acc) 28%,transparent)':'var(--bg4)')+';font-size:12px;color:var(--txt0);line-height:1.6;word-break:break-word';
+        const txt=document.createElement('div'); txt.textContent=m.text;
+        const time=document.createElement('div'); time.style.cssText='font-size:8px;color:var(--txt3);margin-top:3px;text-align:'+(isMe?'right':'left'); time.textContent=m.time||'';
+        bubble.appendChild(txt); bubble.appendChild(time); wrap.appendChild(bubble); box.appendChild(wrap);
+      });
+      box.scrollTop=box.scrollHeight;
+    });
+  } catch(e){const box=document.getElementById('conv-msgs');if(box)box.innerHTML='<div class="empty"><i class="ti ti-alert-triangle"></i>'+e.message+'</div>';}
+}
+async function sendConvMsg(convId){const inp=document.getElementById('conv-inp');const text=inp?.value?.trim();if(!text||!window._fbUser||!window.fbAdd||!window.fbCol)return;inp.value='';try{await window.fbAdd(window.fbCol('chats/'+convId+'/messages'),{text,uid:window._fbUser.uid,name:window._fbUser.displayName||window._fbUser.email.split('@')[0],time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),createdAt:Date.now()})}catch(e){toast('Erro: '+e.message)}}
+function startChatWith(uid,name){document.getElementById('profile-modal').classList.remove('open');const cid=[window._fbUser.uid,uid].sort().join('_');go('chat');setTimeout(()=>{loadConvs().then(()=>openConv(uid,cid,name))},300)}
+
+// COMMUNITY + SOCIAL
+let viewingUid=null;
+async function loadPeople(){const el=document.getElementById('people-list');if(!el||!window._fbUser||!window.fbGets||!window.fbCol)return;el.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';try{const snap=await window.fbGets(window.fbCol('profiles'));const people=[];snap.forEach(d=>{if(d.id!==window._fbUser.uid)people.push({uid:d.id,...d.data()})});if(!people.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i>Nenhum outro criador ainda. Convide amigos!</div>';return}el.innerHTML='';people.forEach(p=>{const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bg3);cursor:pointer';row.onmouseover=()=>row.style.background='color-mix(in srgb,var(--acc) 4%,transparent)';row.onmouseout=()=>row.style.background='';row.onclick=()=>viewProfile(p.uid);const av=document.createElement('div');av.style.cssText='width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--acc) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden';av.innerHTML=p.photo?'<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">':'<i class="ti ti-user" style="font-size:16px;color:var(--acc2)"></i>';const info=document.createElement('div');info.style.flex='1';const nm=document.createElement('div');nm.style.cssText='font-size:12px;color:var(--txt1);font-weight:500';nm.textContent=p.name||'Usuário';info.appendChild(nm);if(p.channel){const ch=document.createElement('div');ch.style.cssText='font-size:9px;color:var(--acc)';ch.textContent=p.channel;info.appendChild(ch)}if(p.bio){const bi=document.createElement('div');bi.style.cssText='font-size:10px;color:var(--txt2)';bi.textContent=p.bio;info.appendChild(bi)}const fol=document.createElement('div');fol.style.cssText='font-size:9px;color:var(--txt2);text-align:right';fol.textContent=(p.followers||[]).length+' seg.';row.appendChild(av);row.appendChild(info);row.appendChild(fol);el.appendChild(row)})}catch(e){el.innerHTML='<div class="empty"><i class="ti ti-alert-triangle"></i>Erro: '+e.message+'</div>'}}
+async function loadCommProfile(){if(!window._fbUser||!window.fbGet||!window.fbDoc)return;try{const s=await window.fbGet(window.fbDoc('profiles',window._fbUser.uid));if(s.exists()){const d=s.data();const bio=document.getElementById('comm-bio');const ch=document.getElementById('comm-chan');if(bio&&d.bio)bio.value=d.bio;if(ch&&d.channel)ch.value=d.channel}}catch(e){}}
+async function saveCommProfile(){if(!window._fbUser||!window.fbSet||!window.fbDoc)return;const bio=document.getElementById('comm-bio')?.value?.trim()||'';const channel=document.getElementById('comm-chan')?.value?.trim()||'';try{await window.fbSet(window.fbDoc('profiles',window._fbUser.uid),{bio,channel},{merge:true});toast('Perfil público atualizado!');const s_inp=document.getElementById('s-bio');const c_inp=document.getElementById('s-chan-inp');if(s_inp)s_inp.value=bio;if(c_inp)c_inp.value=channel}catch(e){toast('Erro: '+e.message)}}
+async function viewProfile(uid){if(!uid)return;viewingUid=uid;const modal=document.getElementById('profile-modal');modal.classList.add('open');if(!window.fbGet||!window.fbDoc){document.getElementById('pm-name').textContent='Usuário';return}try{const snap=await window.fbGet(window.fbDoc('profiles',uid));const p=snap.exists()?snap.data():{name:'Usuário',bio:'',channel:'',followers:[],following:[]};document.getElementById('pm-name').textContent=p.name||'Usuário';document.getElementById('pm-chan').textContent=p.channel||'';document.getElementById('pm-bio').textContent=p.bio||'';document.getElementById('pm-followers').textContent=(p.followers||[]).length;document.getElementById('pm-following').textContent=(p.following||[]).length;const avEl=document.getElementById('pm-av');if(p.photo)avEl.innerHTML='<img src="'+p.photo+'" style="width:100%;height:100%;object-fit:cover">';else avEl.innerHTML='<i class="ti ti-user" style="font-size:24px;color:var(--acc2)"></i>';const me=window._fbUser;if(me&&me.uid!==uid){document.getElementById('pm-msg').style.display='flex';const mySnap=await window.fbGet(window.fbDoc('profiles',me.uid));const myData=mySnap.exists()?mySnap.data():{};const following=myData.following||[];const btn=document.getElementById('pm-follow');const isF=following.includes(uid);btn.textContent=isF?'Seguindo ✓':'Seguir';btn.style.background=isF?'var(--bg3)':'var(--acc)';btn.style.color=isF?'var(--txt1)':'var(--bg)';btn.style.border=isF?'1px solid var(--bg4)':'none'}else{document.getElementById('pm-follow').style.display='none';document.getElementById('pm-msg').style.display='none'};document.getElementById('pm-msg').onclick=()=>startChatWith(uid,p.name||'Usuário')}catch(e){console.error(e)}}
+async function doFollow() {
+  await toggleFollowUser(viewingUid, document.getElementById('pm-follow'));
+  viewProfile(viewingUid);
+}
+
+async function toggleFollowUser(uid, btn) {
+  const me=window._fbUser;
+  if(!me||!uid||me.uid===uid) return;
+  if(btn) btn.disabled=true;
+  try {
+    const myRef=window.fbDoc('profiles',me.uid), theirRef=window.fbDoc('profiles',uid);
+    const [mySnap,theirSnap]=await Promise.all([window.fbGet(myRef),window.fbGet(theirRef)]);
+    const myFollowing=(mySnap.exists()?mySnap.data():{}).following||[];
+    const theirFollowers=(theirSnap.exists()?theirSnap.data():{}).followers||[];
+    const isF=myFollowing.includes(uid);
+    if(isF) {
+      await window.fbSet(myRef,{following:myFollowing.filter(id=>id!==uid)},{merge:true});
+      await window.fbSet(theirRef,{followers:theirFollowers.filter(id=>id!==me.uid)},{merge:true});
+      toast('Deixou de seguir');
+      if(btn){btn.textContent='Seguir';btn.style.background='color-mix(in srgb,var(--acc) 12%,transparent)';btn.style.color='var(--acc2)';btn.style.border='1px solid var(--acc)';}
+    } else {
+      await window.fbSet(myRef,{following:[...myFollowing,uid]},{merge:true});
+      await window.fbSet(theirRef,{followers:[...theirFollowers,me.uid]},{merge:true});
+      toast('Seguindo! 🎉');
+      if(btn){btn.textContent='Seguindo';btn.style.background='transparent';btn.style.color='var(--txt2)';btn.style.border='1px solid var(--bg4)';}
+    }
+  } catch(e){toast('Erro: '+e.message);}
+  if(btn) btn.disabled=false;
+}
+
+// FEEDBACK
+let fbType='suggestion';
+function setFbType(el){fbType=el.dataset.ft;document.querySelectorAll('#fb-types .tp').forEach(t=>t.classList.toggle('on',t===el))}
+async function submitFb(){const msg=document.getElementById('fb-msg').value.trim();if(!msg){toast('Escreva uma mensagem primeiro');return}if(!window._fbUser){toast('Faça login para enviar feedback');return}if(!window.fbSet||!window.fbDoc){toast('Firebase não carregado ainda');return}try{const user=window._fbUser;await window.fbSet(window.fbDoc('feedbacks',Date.now()+'_'+user.uid),{type:fbType,message:msg,author:user.displayName||user.email.split('@')[0],uid:user.uid,photo:user.photoURL||'',createdAt:Date.now(),date:new Date().toLocaleDateString('pt-BR')});document.getElementById('fb-msg').value='';toast('Feedback enviado! Obrigado 💛');loadFbs()}catch(e){toast('Erro: '+e.message);console.error(e)}}
+async function loadFbs(){const el=document.getElementById('fb-list');if(!el||!window._fbUser||!window.fbGets||!window.fbCol)return;el.innerHTML='<div class="empty"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>Carregando...</div>';try{const snap=await window.fbGets(window.fbCol('feedbacks'));const items=[];snap.forEach(d=>items.push(d.data()));items.sort((a,b)=>b.createdAt-a.createdAt);if(!items.length){el.innerHTML='<div class="empty"><i class="ti ti-messages"></i>Nenhum feedback ainda. Seja o primeiro!</div>';return}const tl={suggestion:'💡 Sugestão',bug:'🐛 Bug',idea:'✨ Ideia',compliment:'❤️ Elogio'};el.innerHTML='';items.forEach(fb=>{const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg3);cursor:pointer';row.onclick=()=>viewProfile(fb.uid);const av=document.createElement('div');av.style.cssText='width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden';av.innerHTML=fb.photo?'<img src="'+fb.photo+'" style="width:100%;height:100%;object-fit:cover">':'<i class="ti ti-user" style="font-size:14px;color:var(--acc2)"></i>';const content=document.createElement('div');content.style.flex='1';const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap';const nm=document.createElement('span');nm.style.cssText='font-size:12px;color:var(--txt1);font-weight:500';nm.textContent=fb.author;const tag=document.createElement('span');tag.style.cssText='font-size:9px;padding:1px 7px;border-radius:20px;background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc2)';tag.textContent=tl[fb.type]||fb.type;const dt=document.createElement('span');dt.style.cssText='font-size:9px;color:var(--txt3);margin-left:auto';dt.textContent=fb.date;hdr.appendChild(nm);hdr.appendChild(tag);hdr.appendChild(dt);const msg=document.createElement('div');msg.style.cssText='font-size:12px;color:var(--txt1);line-height:1.65';msg.textContent=fb.message;content.appendChild(hdr);content.appendChild(msg);row.appendChild(av);row.appendChild(content);el.appendChild(row)})}catch(e){el.innerHTML='<div class="empty"><i class="ti ti-alert-triangle"></i>Erro: '+e.message+'</div>';console.error(e)}}
+
+async function toggleLikeFb(fbId, btn) {
+  if(!window._fbUser||!window.fbDoc||!window.fbGet||!window.fbSet) return;
+  try {
+    const ref=window.fbDoc('feedbacks',fbId);
+    const snap=await window.fbGet(ref); if(!snap.exists()) return;
+    const likes=snap.data().likes||[];
+    const myUid=window._fbUser.uid;
+    const liked=likes.includes(myUid);
+    const newLikes=liked?likes.filter(id=>id!==myUid):[...likes,myUid];
+    await window.fbSet(ref,{likes:newLikes},{merge:true});
+    btn.innerHTML='<i class="ti ti-heart'+(liked?'':'-filled')+'" style="font-size:14px"></i> '+newLikes.length;
+    btn.style.color=liked?'var(--txt2)':'var(--red)';
+  } catch(e){toast('Erro: '+e.message);}
+}
+
+function renderReplies(fbId, container, existingReplies) {
+  container.style.cssText='margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:8px;border-left:2px solid var(--bg4)';
+  const list=document.createElement('div');
+  existingReplies.forEach(r=>{
+    const d=document.createElement('div'); d.style.cssText='padding:6px 0;border-bottom:1px solid var(--bg3)';
+    d.innerHTML='<div style="font-size:10px;color:var(--acc2);font-weight:500;margin-bottom:2px">'+(r.author||'Anônimo')+' <span style="color:var(--txt3);font-weight:400">'+(r.date||'')+'</span></div><div style="font-size:11px;color:var(--txt1);line-height:1.6">'+r.text+'</div>';
+    list.appendChild(d);
+  });
+  const row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;margin-top:8px';
+  const inp=document.createElement('input'); inp.className='fin'; inp.placeholder='Responder...'; inp.style.cssText='flex:1;font-size:11px;padding:6px 10px';
+  const btn=document.createElement('button'); btn.className='btn-a'; btn.style.padding='6px 12px';
+  btn.innerHTML='<i class="ti ti-send-2" style="font-size:11px"></i>';
+  btn.onclick=()=>submitReplyDirect(fbId,inp);
+  row.appendChild(inp); row.appendChild(btn);
+  container.innerHTML=''; container.appendChild(list); container.appendChild(row);
+}
+
+async function submitReplyDirect(fbId, inp) {
+  const text=inp?.value?.trim(); if(!text||!window._fbUser) return;
+  try {
+    const ref=window.fbDoc('feedbacks',fbId);
+    const snap=await window.fbGet(ref);
+    const replies=(snap.exists()?snap.data():{}).replies||[];
+    replies.push({author:window._fbUser.displayName||window._fbUser.email.split('@')[0],uid:window._fbUser.uid,text,date:new Date().toLocaleDateString('pt-BR'),ts:Date.now()});
+    await window.fbSet(ref,{replies},{merge:true});
+    inp.value=''; toast('Resposta enviada!'); loadFbs();
+  } catch(e){toast('Erro: '+e.message);}
+}
+
+
+// PROFILE & SETTINGS
+function upPreview(){document.getElementById('p-name').textContent=document.getElementById('s-name').value||'Seu nome';document.getElementById('p-email').textContent=document.getElementById('s-email').value||'seu@email.com';document.getElementById('p-chan').textContent=document.getElementById('s-chan-inp').value||'';document.getElementById('sb-name').textContent=document.getElementById('s-name').value||'Minha conta'}
+async function saveProfile(){const p={name:document.getElementById('s-name').value,email:document.getElementById('s-email').value,chan:document.getElementById('s-chan-inp').value,bio:document.getElementById('s-bio').value};localStorage.setItem('ch_prof',JSON.stringify(p));if(window._fbUser&&window.fbSave)window.fbSave(window._fbUser.uid,'profile',p).catch(()=>{});if(window._fbUser&&window.fbSet&&window.fbDoc){const chan=document.getElementById('s-chan-inp').value;const bio=document.getElementById('s-bio').value;window.fbSet(window.fbDoc('profiles',window._fbUser.uid),{channel:chan,bio},{merge:true}).catch(()=>{})}toast('Perfil salvo!')}
+function clearData(){if(!confirm('Apagar todas as tarefas, gravações e eventos?'))return;['ch_tasks','ch_recs','ch_evs','ch_shorts','ch_history'].forEach(k=>localStorage.removeItem(k));tasks=[];recs=[];events=[];shorts=[];growthHistory=[];renderDTasks();renderDRecs();toast('Dados apagados')}
+document.getElementById('av-file').onchange=function(){const f=this.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{const s=e.target.result;['av-img','sb-img'].forEach(id=>{const el=document.getElementById(id);el.src=s;el.style.display='block'});document.getElementById('av-ic').style.display='none';document.getElementById('sb-ic').style.display='none';localStorage.setItem('ch_av',s);toast('Foto updated')};r.readAsDataURL(f)};
+function loadProfile(){const p=JSON.parse(localStorage.getItem('ch_prof')||'{}');if(p.name){document.getElementById('s-name').value=p.name;document.getElementById('p-name').textContent=p.name;document.getElementById('sb-name').textContent=p.name}if(p.email){document.getElementById('s-email').value=p.email;document.getElementById('p-email').textContent=p.email}if(p.chan){document.getElementById('s-chan-inp').value=p.chan;document.getElementById('p-chan').textContent=p.chan}if(p.bio)document.getElementById('s-bio').value=p.bio;const av=localStorage.getItem('ch_av');if(av){['av-img','sb-img'].forEach(id=>{const el=document.getElementById(id);el.src=av;el.style.display='block'});document.getElementById('av-ic').style.display='none';document.getElementById('sb-ic').style.display='none'}}
+
+// ── WELCOME ANIMATION ──
+function showWelcome(userName) {
+  const screen = document.getElementById('welcome-screen');
+  if (!screen) return;
+  screen.style.display = 'flex';
+
+  const FACTS = [
+    'Os primeiros 48 horas após a publicação são cruciais — o algoritmo decide o alcance do vídeo nesse período.',
+    'Canais que postam consistentemente por 6 meses seguidos têm 3x mais chance de crescer organicamente.',
+    'Thumbnails com rostos humanos recebem em média 38% mais cliques do que thumbnails sem pessoas.',
+    'O título ideal para o YouTube tem entre 40 e 60 caracteres — nem curto demais, nem longo demais.',
+    'Vídeos com capítulos (timestamps) têm retenção 15% maior porque o espectador sente controle.',
+    'Os primeiros 30 segundos do vídeo determinam se alguém assiste até o fim. Corte qualquer introdução longa.',
+    'Responder comentários nas primeiras 2 horas após publicar aumenta significativamente o engajamento.',
+    'O YouTube valoriza o tempo total assistido mais do que o número de visualizações individuais.',
+    'Playlists bem organizadas podem dobrar o tempo que um visitante passa no seu canal.',
+    'Canais de nicho específico crescem até 4x mais rápido do que canais generalistas no início.',
+    'Vídeos publicados entre terça e quinta, às 14h ou 20h, têm em média maior alcance inicial.',
+    'O CTR (taxa de clique) ideal fica entre 4% e 10%. Abaixo disso, a thumbnail precisa ser repensada.',
+    'Usar a palavra "você" no título aumenta o CTR porque cria conexão direta com o espectador.',
+    'O YouTube Shorts pode trazer novos inscritos para o canal principal em até 3x mais velocidade.',
+    'Criadores que estudam os próprios Analytics crescem 2x mais rápido do que os que ignoram os dados.',
+    'Um vídeo evergreen (conteúdo atemporal) pode gerar views por anos — invista nisso antes de trends.',
+    'A retenção acima de 50% é considerada excelente pelo algoritmo e aumenta a distribuição orgânica.',
+    'Colaborações com canais do mesmo nicho são a forma mais rápida de ganhar inscritos qualificados.',
+    'A maioria dos canais que chegam a 10.000 inscritos leva entre 18 e 36 meses de publicação constante.',
+    'Criar uma comunidade engajada vale mais do que ter muitos inscritos passivos — qualidade > quantidade.',
+  ];
+
+  const greeting = document.getElementById('wl-greeting');
+  const sub = document.getElementById('wl-sub');
+  const status = document.getElementById('wl-status');
+  const bar = document.getElementById('wl-bar');
+
+  // Set greeting
+  if (greeting) {
+    const hour = new Date().getHours();
+    const timeGreet = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+    greeting.textContent = userName ? timeGreet + ', ' + userName.split(' ')[0] + '.' : 'Bem-vindo de volta.';
+  }
+
+  // Rotate facts every 4.5s
+  let factIdx = Math.floor(Math.random() * FACTS.length);
+  if (sub) {
+    sub.style.transition = 'opacity .4s ease';
+    sub.textContent = FACTS[factIdx];
+  }
+  const factInterval = setInterval(() => {
+    factIdx = (factIdx + 1) % FACTS.length;
+    if (sub) {
+      sub.style.opacity = '0';
+      setTimeout(() => {
+        sub.textContent = FACTS[factIdx];
+        sub.style.opacity = '1';
+      }, 400);
+    }
+  }, 4500);
+
+  // Progress bar steps over 15 seconds
+  const steps = [
+    { pct: 8,   msg: 'Autenticando sessão',       delay: 400   },
+    { pct: 20,  msg: 'Verificando credenciais',   delay: 1500  },
+    { pct: 35,  msg: 'Sincronizando tarefas',     delay: 3000  },
+    { pct: 48,  msg: 'Carregando gravações',      delay: 4500  },
+    { pct: 60,  msg: 'Atualizando calendário',    delay: 6000  },
+    { pct: 72,  msg: 'Carregando preferências',   delay: 7500  },
+    { pct: 82,  msg: 'Sincronizando histórico',   delay: 9000  },
+    { pct: 91,  msg: 'Preparando seu espaço',     delay: 11000 },
+    { pct: 97,  msg: 'Quase lá...',               delay: 13000 },
+    { pct: 100, msg: 'Tudo pronto ✓',             delay: 14500 },
+  ];
+
+  steps.forEach(step => {
+    setTimeout(() => {
+      if (bar) bar.style.width = step.pct + '%';
+      if (status) {
+        status.style.opacity = '0';
+        setTimeout(() => { status.textContent = step.msg; status.style.opacity = '1'; }, 150);
+      }
+    }, step.delay);
+  });
+
+  // Hide after 15s
+  setTimeout(() => {
+    clearInterval(factInterval);
+    screen.style.transition = 'opacity .6s ease';
+    screen.style.opacity = '0';
+    setTimeout(() => { screen.style.display = 'none'; screen.style.opacity = ''; }, 600);
+  }, 15200);
+}
+
+// AUTH
+function showReg(){document.getElementById('form-login').style.display='none';document.getElementById('form-reg').style.display='flex';document.getElementById('auth-title').textContent='Criar conta';document.getElementById('auth-sub').textContent='Comece agora, é grátis'}
+function showLogin(){document.getElementById('form-reg').style.display='none';document.getElementById('form-login').style.display='flex';document.getElementById('auth-title').textContent='Bem-vindo';document.getElementById('auth-sub').textContent='Entre na sua conta'}
+function authErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',4000)}
+function friendlyErr(code){const map={'auth/email-already-in-use':'Este email já está cadastrado.','auth/invalid-email':'Email inválido.','auth/weak-password':'Senha fraca. Use pelo menos 6 caracteres.','auth/user-not-found':'Email não encontrado.','auth/wrong-password':'Senha incorreta.','auth/invalid-credential':'Email ou senha incorretos.','auth/too-many-requests':'Muitas tentativas. Tente mais tarde.'};return map[code]||'Erro ao autenticar. Tente novamente.'}
+async function doLogin(){const email=document.getElementById('l-email').value.trim();const pass=document.getElementById('l-pass').value;if(!email||!pass){authErr('auth-err','Preencha todos os campos');return}try{await window.fbLogin(email,pass)}catch(e){authErr('auth-err',friendlyErr(e.code))}}
+async function doReg(){const name=document.getElementById('r-name').value.trim();const email=document.getElementById('r-email').value.trim();const pass=document.getElementById('r-pass').value;if(!name||!email||!pass){authErr('auth-err2','Preencha todos os campos');return}try{await window.fbRegister(email,pass,name)}catch(e){authErr('auth-err2',friendlyErr(e.code))}}
+document.getElementById('l-email').onkeydown=e=>{if(e.key==='Enter')doLogin()};
+
+// ── LICENSE SYSTEM ──
+const LICENSED_PAGES = ['tasks','recs','cal','ai','yt','leads','monetization','shorts','history','checklist','squad','chat','people','feedback'];
+const SITE_URL = 'https://seusite.com'; 
+
+// ── COLE SUA SENHA SECRETA AQUI ──
+const APP_SECRET = 'CreatorHub2026';
+// ────────────────────────────────────────────────────────
+
+async function hmacSign(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkLicense() {
+  const raw = localStorage.getItem('ch_license');
+  if (!raw) return { valid: false, reason: 'no_key' };
+  try {
+    const parts = raw.split('.');
+    if (parts.length !== 2) return { valid: false, reason: 'invalid' };
+    const [payload, sig] = parts;
+    const expectedSig = await hmacSign(APP_SECRET, payload);
+    if (sig !== expectedSig) return { valid: false, reason: 'invalid' };
+    const decoded = JSON.parse(atob(payload));
+    if (!decoded.exp) return { valid: false, reason: 'invalid' };
+    const now = Date.now();
+    if (decoded.exp !== 9999999999999 && now > decoded.exp) {
+      return { valid: false, reason: 'expired' };
+    }
+    return { valid: true, exp: decoded.exp };
+  } catch(e) {
+    return { valid: false, reason: 'invalid' };
+  }
+}
+
+function getDaysLeft(exp) {
+  if (exp === 9999999999999) return null; 
+  const diff = exp - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+async function applyLicenseState() {
+  const lic = await checkLicense();
+  const isValid = lic.valid;
+
+  document.querySelectorAll('.ni[data-p]').forEach(el => {
+    const p = el.dataset.p;
+    if (LICENSED_PAGES.includes(p)) {
+      el.classList.toggle('locked', !isValid);
+      let dot = el.querySelector('.lock-dot');
+      if (!dot) { dot = document.createElement('span'); dot.className = 'lock-dot'; el.appendChild(dot); }
+    }
+  });
+
+  const statusEl = document.getElementById('lic-status');
+  const infoEl = document.getElementById('lic-info');
+  const detailsEl = document.getElementById('lic-details');
+  const removeBtn = document.getElementById('lic-remove-btn');
+
+  if (statusEl) {
+    if (isValid) {
+      const daysLeft = getDaysLeft(lic.exp);
+      statusEl.textContent = daysLeft === null ? '✓ Ilimitado' : '✓ Ativo — ' + daysLeft + 'd restantes';
+      statusEl.style.background = 'color-mix(in srgb,var(--green) 16%,transparent)';
+      statusEl.style.color = 'var(--green)';
+      if (infoEl) infoEl.textContent = 'Sua chave está ativa. Para trocar, remova a atual e cole a nova.';
+      if (detailsEl) { detailsEl.style.display = 'block'; detailsEl.textContent = daysLeft === null ? '✓ Acesso ilimitado ativado' : '✓ Acesso válido por mais ' + daysLeft + ' dias'; }
+      if (removeBtn) removeBtn.style.display = 'block';
+    } else {
+      statusEl.textContent = lic.reason === 'expired' ? '⚠ Expirada' : 'Sem chave';
+      statusEl.style.background = lic.reason === 'expired' ? 'color-mix(in srgb,var(--amber) 16%,transparent)' : 'var(--bg3)';
+      statusEl.style.color = lic.reason === 'expired' ? 'var(--amber)' : 'var(--txt2)';
+      if (infoEl) infoEl.textContent = lic.reason === 'expired' ? 'Sua chave expirou. Adquira uma nova no nosso site.' : 'Cole sua chave de acesso para desbloquear o Creator Hub.';
+      if (detailsEl) { detailsEl.style.display = 'none'; }
+      if (removeBtn) removeBtn.style.display = lic.reason === 'expired' ? 'block' : 'none';
+    }
+  }
+}
+
+async function activateLicense() {
+  const inp = document.getElementById('lic-inp');
+  const key = inp?.value?.trim();
+  if (!key) { toast('Cole seu codigo no campo'); return; }
+
+  if (key.toUpperCase().startsWith('GCR-')) {
+    const btn = document.getElementById('lic-activate-btn');
+    if (btn) { btn.textContent = 'Buscando...'; btn.disabled = true; }
+    try {
+      const code = key.toUpperCase();
+      const url = 'https://firestore.googleapis.com/v1/projects/creator-hub-893e2/databases/(default)/documents/license_keys/' + code + '?key=AIzaSyAdsAHoraoKLtJ25MOZ234BQIlmQrzEWoQ';
+      const res = await fetch(url);
+      if (!res.ok) {
+        toast('Codigo nao encontrado. Verifique e tente novamente.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      const doc = await res.json();
+      const fields = doc.fields || {};
+      const ativa = fields.ativa?.booleanValue;
+      if (ativa === false) {
+        toast('Esta chave foi revogada.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      const fullKey = fields.chave?.stringValue;
+      const exp = parseInt(fields.exp?.integerValue || '0');
+      if (!fullKey) {
+        toast('Erro ao buscar chave. Tente novamente.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      if (exp !== 9999999999999 && Date.now() > exp) {
+        toast('Este codigo ja expirou!');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      const parts = fullKey.split('.');
+      if (parts.length !== 2) {
+        toast('Erro de validacao. Contate o suporte.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      const expectedSig = await hmacSign(APP_SECRET, parts[0]);
+      if (parts[1] !== expectedSig) {
+        toast('Erro de validacao. Contate o suporte.');
+        if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+        return;
+      }
+      localStorage.setItem('ch_license', fullKey);
+      localStorage.setItem('ch_license_code', code);
+      inp.value = '';
+      if (btn) { btn.textContent = 'Ativar'; btn.disabled = false; }
+      await applyLicenseState();
+      const days = getDaysLeft(exp);
+      toast(days === null ? '🎉 Acesso ilimitado ativado!' : '🎉 Acesso ativado por ' + days + ' dias!');
+    } catch(e) {
+      console.error('activateLicense error:', e);
+      toast('Erro de conexao. Verifique sua internet.');
+      const btn2 = document.getElementById('lic-activate-btn');
+      if (btn2) { btn2.textContent = 'Ativar'; btn2.disabled = false; }
+    }
+    return;
+  }
+
+  try {
+    const parts = key.split('.');
+    if (parts.length !== 2) { toast('Codigo invalido.'); return; }
+    const [payload, sig] = parts;
+    const expectedSig = await hmacSign(APP_SECRET, payload);
+    if (sig !== expectedSig) { toast('Codigo invalido.'); return; }
+    const decoded = JSON.parse(atob(payload));
+    if (!decoded.exp) { toast('Codigo invalido.'); return; }
+    if (decoded.exp !== 9999999999999 && Date.now() > decoded.exp) {
+      toast('Este codigo ja expirou!'); return;
+    }
+    localStorage.setItem('ch_license', key);
+    inp.value = '';
+    await applyLicenseState();
+    const days = getDaysLeft(decoded.exp);
+    toast(days === null ? '🎉 Acesso ilimitado ativado!' : '🎉 Acesso ativado por ' + days + ' dias!');
+  } catch(e) {
+    toast('Codigo invalido. Verifique e tente novamente.');
+  }
+}
+
+function removeLicense() {
+  if (!confirm('Remover chave de acesso?')) return;
+  localStorage.removeItem('ch_license');
+  applyLicenseState();  
+  toast('Chave removida');
+}
+
+function go(p) {
+  if (LICENSED_PAGES.includes(p)) {
+    document.querySelectorAll('.pg').forEach(e => e.classList.remove('act'));
+    document.querySelectorAll('.ni[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+    document.querySelectorAll('.mn-item[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+    document.getElementById('pg-title').textContent = PAGES[p] || p;
+    closeMore();
+    checkLicense().then(lic => {
+      if (!lic.valid) {
+        showLockScreen(p);
+      } else {
+        const lo = document.getElementById('lock-overlay');
+        if (lo) lo.remove();
+        _goBase(p);
+      }
+    });
+    return;
+  }
+  const lo = document.getElementById('lock-overlay');
+  if (lo) lo.remove();
+  _goBase(p);
+}
+
+function showLockScreen(p) {
+  document.querySelectorAll('.ni[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+  document.querySelectorAll('.mn-item[data-p]').forEach(e => e.classList.toggle('act', e.dataset.p === p));
+  document.getElementById('pg-title').textContent = PAGES[p] || p;
+  closeMore();
+  const existing = document.getElementById('lock-overlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'lock-overlay';
+  const sb = document.getElementById('sb');
+  const sbW = sb ? (sb.classList.contains('open') ? 196 : 54) : 54;
+  const isMobile = window.innerWidth <= 768;
+  overlay.style.cssText = 'position:fixed;top:0;bottom:' + (isMobile ? '56px' : '0') + ';left:' + (isMobile ? '0' : sbW + 'px') + ';right:0;background:#000;z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;animation:fadeIn .25s ease';
+  const lockIcon = document.createElement('div');
+  lockIcon.style.cssText = 'width:64px;height:64px;border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center';
+  lockIcon.innerHTML = '<i class="ti ti-lock" style="font-size:28px;color:#555"></i>';
+  const lockTitle = document.createElement('div');
+  lockTitle.style.cssText = 'font-family:var(--serif);font-size:22px;font-style:italic;color:#fff;text-align:center';
+  lockTitle.textContent = 'Acesso bloqueado';
+  const lockSub = document.createElement('div');
+  lockSub.style.cssText = 'font-size:12px;color:#666;text-align:center;max-width:260px;line-height:1.7';
+  lockSub.textContent = 'Adquira uma chave de acesso no nosso site para desbloquear todas as funcionalidades.';
+  const lockBtns = document.createElement('div');
+  lockBtns.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px';
+  const lockBtn = document.createElement('button');
+  lockBtn.style.cssText = 'background:#c8a96e;color:#000;border:none;border-radius:8px;padding:10px 24px;font-size:12px;font-family:var(--sans);font-weight:600;cursor:pointer';
+  lockBtn.textContent = 'Inserir chave de acesso';
+  lockBtn.onclick = () => { overlay.remove(); go('settings'); };
+  const lockLink = document.createElement('a');
+  lockLink.href = SITE_URL; lockLink.target = '_blank';
+  lockLink.style.cssText = 'font-size:11px;color:#555;text-decoration:none;cursor:pointer';
+  lockLink.textContent = 'Adquirir acesso no site →';
+  lockBtns.appendChild(lockBtn); lockBtns.appendChild(lockLink);
+  overlay.appendChild(lockIcon); overlay.appendChild(lockTitle);
+  overlay.appendChild(lockSub); overlay.appendChild(lockBtns);
+  document.body.appendChild(overlay);
+}
+
+// INIT
+loadProfile();renderDTasks();renderDRecs();checkOAuth();renderDashYT();
+applyLicenseState();  
+</script>
+</body>
+</html>
