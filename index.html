@@ -282,12 +282,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt0);display:flex
 .th-sw.on{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
 .th-a{flex:1}.th-b{width:10px}
 .th-nm{font-size:8px;color:var(--txt2);letter-spacing:.03em;text-align:center}
-.th-opt{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
-.th-sw{width:42px;height:26px;border-radius:5px;border:2px solid transparent;display:flex;overflow:hidden;transition:all .18s}
-.th-sw:hover{transform:scale(1.1)}
-.th-sw.on{border-color:var(--acc);transform:scale(1.05)}
-.th-a{flex:1}.th-b{width:9px}
-.th-nm{font-size:8px;color:var(--txt2)}
 .danger-btn{background:transparent;border:1px solid var(--bg4);color:var(--txt2);padding:7px 13px;border-radius:7px;font-size:10px;font-family:var(--sans);cursor:pointer;transition:all .18s}
 .danger-btn:hover{border-color:var(--red);color:var(--red);transform:translateY(-1px)}
 .yt-ins{background:color-mix(in srgb,var(--acc) 7%,transparent);border:1px solid color-mix(in srgb,var(--acc) 20%,transparent);border-radius:8px;padding:12px;font-size:12px;color:var(--txt1);line-height:1.7}
@@ -363,7 +357,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js"; // INTEGRAÇÃO: Messaging
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js"; 
 
   const firebaseConfig = {
     apiKey: "AIzaSyAdsAHoraoKLtJ25MOZ234BQIlmQrzEWoQ",
@@ -377,7 +371,7 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  const messaging = getMessaging(app); // INTEGRAÇÃO: Instância do Messaging
+  const messaging = getMessaging(app);
 
   const FM = { doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp };
   window._fbAuth = auth; window._fbDb = db; window._fbMessaging = messaging;
@@ -393,22 +387,22 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
   window.fbLim = FM.limit;
   window.fbSnap = FM.onSnapshot;
 
- window.ativarNotificacoes = async () => {
+  // 1. SISTEMA DE PERMISSÃO CORRIGIDO (Com caminho do SW atualizado)
+  window.ativarNotificacoes = async () => {
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             toast('Permissão concedida! Registrando celular...');
             
-            // 1. ENSINA O FIREBASE ONDE ESTÁ O ARQUIVO NO GITHUB PAGES
+            // CAMINHO CORRIGIDO AQUI:
             const swRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
             
             // COLE SUA CHAVE VAPID AQUI:
             const vapidKey = "BP334HJBRPjmG8NRFEGf_y2ASmZtqEKVbZHtniyJFJOO_dKeDpqg2C8sK07YrBtha1Q6P6_Ofv-bqd_09iKWwik"; 
             
-            // 2. PASSA A REGISTRO CORRETO PARA GERAR O TOKEN
             const currentToken = await getToken(messaging, { 
                 vapidKey: vapidKey,
-                serviceWorkerRegistration: swRegistration // Mágica acontece aqui!
+                serviceWorkerRegistration: swRegistration
             });
             
             if (currentToken) {
@@ -427,15 +421,51 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
         }
     } catch (error) {
         console.error('Erro nas notificações:', error);
-        toast('Erro ao ativar notificações. Olhe o console.');
+        toast('Erro ao ativar notificações. Verifique a chave VAPID.');
     }
   };
 
-  // INTEGRAÇÃO: O que fazer quando uma notificação chega e o app está aberto
   onMessage(messaging, (payload) => {
       console.log('Mensagem recebida com app aberto: ', payload);
       toast(`🔔 ${payload.notification?.title || 'Notificação'}: ${payload.notification?.body || ''}`);
   });
+
+  // 2. LÓGICA DOS LEMBRETES AUTOMÁTICOS
+  window.verificarEventosProximos = () => {
+      if (Notification.permission !== 'granted') return;
+      
+      const agora = new Date();
+      let eventos = JSON.parse(localStorage.getItem('ch_evs') || '[]');
+      let mudou = false;
+
+      eventos.forEach(ev => {
+          // Ignora se não tiver data ou se já tiver sido notificado
+          if (!ev.date || ev.notified) return;
+          
+          const dataEvento = new Date(ev.date + 'T' + (ev.time || '10:00') + ':00');
+          const diffMinutos = (dataEvento - agora) / 1000 / 60;
+
+          // Se faltar entre 0 e 30 minutos para o evento:
+          if (diffMinutos > 0 && diffMinutos <= 30) {
+              new Notification('Lembrete de Evento ⏰', {
+                  body: `"${ev.title}" começa em ${Math.round(diffMinutos)} minutos!`,
+                  icon: 'https://cdn-icons-png.flaticon.com/512/3239/3239952.png'
+              });
+              ev.notified = true; // Marca como avisado para não apitar repetidamente
+              mudou = true;
+          }
+      });
+
+      // Se atualizou algum evento, guarda a alteração
+      if (mudou) {
+          localStorage.setItem('ch_evs', JSON.stringify(eventos));
+          if (window._fbUser) window.fbSave(window._fbUser.uid, 'events', eventos).catch(()=>{});
+          if (typeof events !== 'undefined') {
+              events.length = 0;
+              eventos.forEach(x => events.push(x));
+          }
+      }
+  };
 
   window.ensureProfile = async (user) => {
     try {
@@ -478,8 +508,14 @@ canvas{border-radius:8px;background:var(--bg2);display:block}
       ['sb-name','p-name'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = name; });
       const em = document.getElementById('p-email');
       if(em) em.textContent = user.email;
-      // Show welcome animation
+      
+      // MOSTRAR ANIMAÇÃO DE BOAS VINDAS
       showWelcome(name);
+
+      // 3. INICIAR VERIFICADOR AUTOMÁTICO DE LEMBRETES (A cada 60 segundos)
+      setTimeout(() => window.verificarEventosProximos(), 3000); // Roda 3s após logar
+      setInterval(() => window.verificarEventosProximos(), 60000); // Roda a cada minuto
+      
     } else {
       document.getElementById('auth-screen').style.display = 'flex';
       document.getElementById('app-screen').style.display = 'none';
